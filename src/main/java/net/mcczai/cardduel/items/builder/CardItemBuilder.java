@@ -6,6 +6,7 @@ import net.mcczai.cardduel.items.AbstractCardItem;
 import net.mcczai.cardduel.items.CardItem;
 import net.mcczai.cardduel.items.CardItemManager;
 import net.mcczai.cardduel.items.ICard;
+import net.mcczai.cardduel.resources.CommonCardIndex;
 import net.mcczai.cardduel.resources.pojo.CardIndexPOJO;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -65,7 +66,7 @@ public final class CardItemBuilder {
     }
 
     public @NotNull ItemStack build(){
-        String type = CdAPI.getCommonCardIndex(cardId).map(index -> CardIndexPOJO.getType()).orElse(null);
+        String type = CdAPI.getCommonCardIndex(cardId).map(CommonCardIndex::getType).orElse(null);
         Preconditions.checkArgument(type != null, "Could not found card id: " + cardId);
 
         DeferredHolder<AbstractCardItem, CardItem> cardItemDeferredHolder = CardItemManager.getCardItemRegistryObject(type);

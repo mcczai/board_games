@@ -26,7 +26,7 @@ import static net.mcczai.cardduel.resources.CommonCardPackLoader.CARD_INDEX;
 import static net.mcczai.cardduel.resources.CommonCardPackLoader.GSON;
 
 public class CommonCardIndexLoader {
-    private static final Pattern CARD_INDEX_PATTERN = Pattern.compile("^(\\w+)/guns/index/(\\w+)\\.json$");
+    private static final Pattern CARD_INDEX_PATTERN = Pattern.compile("^(\\w+)/cards/index/(\\w+)\\.json$");
     private static final Marker MARKER = MarkerManager.getMarker("CommonGunIndexLoader");
 
     public static void loadCardIndex(String path, ZipFile zipFile) throws IOException {
@@ -51,13 +51,13 @@ public class CommonCardIndexLoader {
     }
 
     public static void loadCardIndex(File root) throws IOException {
-        Path filePath = root.toPath().resolve("guns/index");
+        Path filePath = root.toPath().resolve("cards/index");
         if (Files.isDirectory(filePath)) {
             PathVisitor visitor = new PathVisitor(filePath.toFile(), root.getName(), ".json", (id, file) -> {
                 try (InputStream stream = Files.newInputStream(file)) {
                     String json = IOUtils.toString(stream, StandardCharsets.UTF_8);
                     loadCardFromJsonString(id, json);
-                } catch (IllegalArgumentException | IOException | JsonSyntaxException | JsonIOException exception) {
+                } catch (Exception exception) {
                     CardduelMod.LOGGER.warn("{} index file read fail!", file);
                     exception.printStackTrace();
                 }

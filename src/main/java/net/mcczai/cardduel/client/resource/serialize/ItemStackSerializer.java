@@ -21,7 +21,6 @@ public class ItemStackSerializer implements JsonDeserializer<ItemStack> {
             String itemName = GsonHelper.getAsString(jsonObject,"item");
             Item item = getItem(itemName,false);
             // TODO:这里应该返回个物品，在1.20.1是CraftingHelper.getItemStack
-            // TODO:2024.10.08 mcczai留 这里绝对有问题
             return new ItemStack(item,GsonHelper.getAsInt(jsonObject,"count",1));
         }else {
             throw new JsonSyntaxException("Expected" + json + "to be a ItemStack because it's not an object");

@@ -25,10 +25,6 @@ public abstract class AbstractCardItem extends Item implements ICard {
         super(properties);
     }
 
-
-    private static Comparator<Map.Entry<ResourceLocation, CommonCardIndex>> idNameSort(){
-        return Comparator.comparingInt(m -> m.getValue().getSort());
-    }
     /**
      * 右键时触发的事件
      */
@@ -47,10 +43,9 @@ public abstract class AbstractCardItem extends Item implements ICard {
     /**
      *根据卡牌类型进行分类注册(是否需要？)
      */
-    // TODO: 这里糠了 index,cardDataPOJO,key均为null
     public static @NotNull NonNullList<ItemStack> fillItemTab(CardTabType type){
         NonNullList<ItemStack> stacks = NonNullList.create();
-        CdAPI.getAllCommonCardIndex().stream().sorted(idNameSort()).forEach(entry ->{
+        CdAPI.getAllCommonCardIndex().stream().sorted().forEach(entry ->{
             CommonCardIndex index = entry.getValue();
             CardDataPOJO cardDataPOJO = index.getCardData();
             String key = type.name().toLowerCase(Locale.US);

@@ -5,6 +5,7 @@ import net.mcczai.cardduel.client.resource.ClientCardIndex;
 import net.mcczai.cardduel.resources.pojo.CardIndexPOJO;
 import net.mcczai.cardduel.resources.pojo.CardDataPOJO;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import org.apache.commons.lang3.StringUtils;
 
 public class CommonCardIndex {
@@ -13,7 +14,6 @@ public class CommonCardIndex {
     private String type;
     private int stackSize;
     private CardIndexPOJO pojo;
-    private int sort;
 
     private CommonCardIndex() {
     }
@@ -28,8 +28,9 @@ public class CommonCardIndex {
 
     private static void checkIndex(CardIndexPOJO cardIndexPOJO, CommonCardIndex index) {
         Preconditions.checkArgument(cardIndexPOJO != null, "index object file is empty");
-        Preconditions.checkArgument(StringUtils.isNoneBlank(CardIndexPOJO.getType()));
+        Preconditions.checkArgument(StringUtils.isNoneBlank(cardIndexPOJO.getType()));
         index.stackSize = Math.max(cardIndexPOJO.getStackSize(), 1);
+        index.type = cardIndexPOJO.getType();
     }
 
     private static void checkData(CardIndexPOJO cardIndexPOJO,CommonCardIndex index){
@@ -43,12 +44,14 @@ public class CommonCardIndex {
         Preconditions.checkArgument(data.getDESCRIPTION() != null, "description id is empty");
         Preconditions.checkArgument(data.getTYPE() != null, "type id is empty");
         Preconditions.checkArgument(data.getSKILL() != null, "skill id is empty");
+        index.cardDataPOJO =data;
     }
 
 
     public CardDataPOJO getCardData(){
         return cardDataPOJO;
     }
+
 
     public String getType(){
         return type;
@@ -58,7 +61,4 @@ public class CommonCardIndex {
         return pojo;
     }
 
-    public int getSort(){
-        return sort;
-    }
 }

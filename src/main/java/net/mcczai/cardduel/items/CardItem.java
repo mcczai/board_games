@@ -20,9 +20,6 @@ public class CardItem extends AbstractCardItem implements CardDataAccessor {
         super(new Properties().stacksTo(1));
     }
 
-
-
-
     /**
      *右键牌桌时，判断卡是否为已加入战斗的卡
      */

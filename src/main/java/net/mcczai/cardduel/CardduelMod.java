@@ -6,10 +6,22 @@ import net.mcczai.cardduel.init.ModBlockEntities;
 import net.mcczai.cardduel.init.ModBlocks;
 import net.mcczai.cardduel.init.ModDataComponents;
 import net.mcczai.cardduel.init.ModItem;
+import net.mcczai.cardduel.items.AbstractCardItem;
+import net.mcczai.cardduel.items.CardItem;
+import net.mcczai.cardduel.items.CardItemManager;
+import net.minecraft.core.DefaultedRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.IRegistryExtension;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.neoforged.neoforge.registries.RegisterEvent;
+import net.neoforged.neoforge.registries.datamaps.DataMapsUpdatedEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -33,9 +45,11 @@ public class CardduelMod {
 
         registerDefaultExtraCardPack();
     }
-//
+
     public static void registerDefaultExtraCardPack() {
         String jarDefaultPackPath = String.format("/assets/%s/custom/%s",MODID,DEFAULT_PACK);
         ResourceManager.registerExtraGunPack(CardduelMod.class,jarDefaultPackPath);
     }
+
+
 }
