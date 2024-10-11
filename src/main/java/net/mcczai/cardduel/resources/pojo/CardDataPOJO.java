@@ -17,10 +17,10 @@ public class CardDataPOJO {
     private String DESCRIPTION = null;
 
     @SerializedName("type")
-    private String TYPE = null;
+    private String TYPE = "trap";
 
     @SerializedName("skill")
-    private String SKILL = null;
+    private String SKILL = "1";
 
     public int getHP(){
         return HP;

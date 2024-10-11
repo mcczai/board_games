@@ -10,11 +10,14 @@ import net.mcczai.cardduel.client.resource.loader.asset.PackInfoLoader;
 import net.mcczai.cardduel.client.resource.loader.asset.TextureLoader;
 import net.mcczai.cardduel.client.resource.serialize.ItemStackSerializer;
 import net.mcczai.cardduel.config.common.OtherConfig;
+import net.mcczai.cardduel.resources.VersionChecker;
 import net.mcczai.cardduel.util.GetJarResources;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,7 +63,7 @@ public class ClientCardPackLoader {
         ClientCardIndexLoader.loadCardIndex();
     }
 
-    private static void readAsset(File[] files) {
+    private static void readAsset(File @NotNull [] files) {
         for (File file : files) {
             if (file.isFile() && file.getName().endsWith(".zip")) {
                 readZipAsset(file);
@@ -77,8 +80,11 @@ public class ClientCardPackLoader {
         }
     }
 
-    private static void readZipAsset(File file) {
+    private static void readZipAsset(@NotNull File file) {
         try (ZipFile zipFile = new ZipFile(file)){
+            if (VersionChecker.noneMatch(zipFile,file.toPath())){
+                return;
+            }
             Enumeration<? extends  ZipEntry> iteration = zipFile.entries();
             while (iteration.hasMoreElements()){
                 String path = iteration.nextElement().getName();
@@ -110,7 +116,7 @@ public class ClientCardPackLoader {
     }
 
     private static void readDirAsset(File root){
-        if (root.isDirectory()){
+        if (VersionChecker.match(root)){
             LanguageLoader.load(root);
             PackInfoLoader.load(root);
             TextureLoader.load(root);
@@ -125,7 +131,8 @@ public class ClientCardPackLoader {
         }
     }
 
-    public static Set<Map.Entry<ResourceLocation,ClientCardIndex>> getAllCard(){
+    @Contract(pure = true)
+    public static @NotNull Set<Map.Entry<ResourceLocation,ClientCardIndex>> getAllCard(){
         return CARD_INDEX.entrySet();
     }
 

@@ -15,6 +15,7 @@ public record CardDataComponent(int atk, int hp, int mp, String type
             Codec.INT.fieldOf("hp").forGetter(o -> o.hp),
             Codec.INT.fieldOf("mp").forGetter(o -> o.mp),
             Codec.STRING.fieldOf("type").forGetter(o -> o.type),
+            //Codec.STRING.optionalFieldOf("skilll").forGetter(o -> o.skilll.describeConstable()),
             Codec.STRING.fieldOf("skill1").forGetter(o -> o.skill1),
             Codec.STRING.fieldOf("skill2").forGetter(o -> o.skill2),
             Codec.STRING.fieldOf("skill3").forGetter(o -> o.skill3),

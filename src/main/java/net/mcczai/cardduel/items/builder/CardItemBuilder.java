@@ -6,9 +6,11 @@ import net.mcczai.cardduel.items.AbstractCardItem;
 import net.mcczai.cardduel.items.CardItem;
 import net.mcczai.cardduel.items.CardItemManager;
 import net.mcczai.cardduel.items.ICard;
+import net.mcczai.cardduel.resources.pojo.CardIndexPOJO;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.registries.DeferredHolder;
+import org.jetbrains.annotations.NotNull;
 
 public final class CardItemBuilder {
     private int count = 1;
@@ -62,8 +64,8 @@ public final class CardItemBuilder {
         return this;
     }
 
-    public ItemStack build(){
-        String type = CdAPI.getCommonCardIndex(cardId).map(index -> index.getPojo().getType()).orElse(null);
+    public @NotNull ItemStack build(){
+        String type = CdAPI.getCommonCardIndex(cardId).map(index -> CardIndexPOJO.getType()).orElse(null);
         Preconditions.checkArgument(type != null, "Could not found card id: " + cardId);
 
         DeferredHolder<AbstractCardItem, CardItem> cardItemDeferredHolder = CardItemManager.getCardItemRegistryObject(type);

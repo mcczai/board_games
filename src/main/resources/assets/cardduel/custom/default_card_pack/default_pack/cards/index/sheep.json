@@ -3,5 +3,5 @@
   "data": "default_pack:sheep",
   "stack_size": 1,
   "tooltip": "default_card.card.sheep.tooltip",
-  "type": "summon"
+  "type": "trap"
 }

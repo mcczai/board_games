@@ -2,7 +2,6 @@ package net.mcczai.cardduel.event;
 
 import net.mcczai.cardduel.CardduelMod;
 import net.mcczai.cardduel.resources.DedicatedServerReloadManager;
-import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;

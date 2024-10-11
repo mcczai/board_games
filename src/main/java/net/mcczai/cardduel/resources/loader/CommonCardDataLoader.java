@@ -22,8 +22,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-    //网络包记得写
-public final class CardDataLoader {
+
+public final class CommonCardDataLoader {
     private static final Marker MARKER = MarkerManager.getMarker("CardDataLoader");
     public static final Pattern CARD_DATA_PATTERN = Pattern.compile("^(\\w+)/cards/data/([\\w/]+)\\.json$");
 
@@ -44,6 +44,7 @@ public final class CardDataLoader {
                 ResourceLocation registryName = ResourceLocation.fromNamespaceAndPath(namespace, path);
                 String json = IOUtils.toString(stream, StandardCharsets.UTF_8);
                 loadFromJsonString(registryName, json);
+                // TODO:网络包记得写
                 return true;
             } catch (IOException | JsonSyntaxException | JsonIOException exception) {
                 CardduelMod.LOGGER.warn(MARKER, "Failed to read data file: {}, entry: {}", zipFile, entry);
@@ -63,6 +64,7 @@ public final class CardDataLoader {
                 try (InputStream stream = Files.newInputStream(file)) {
                     String json = IOUtils.toString(stream, StandardCharsets.UTF_8);
                     loadFromJsonString(id, json);
+                    // TODO:网络包记得写
                 } catch (IOException | JsonSyntaxException | JsonIOException exception) {
                     CardduelMod.LOGGER.warn(MARKER, "Failed to read data file: {}", file);
                     exception.printStackTrace();

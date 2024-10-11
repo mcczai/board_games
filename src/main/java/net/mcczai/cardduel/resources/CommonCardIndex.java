@@ -1,6 +1,7 @@
 package net.mcczai.cardduel.resources;
 
 import com.google.common.base.Preconditions;
+import net.mcczai.cardduel.client.resource.ClientCardIndex;
 import net.mcczai.cardduel.resources.pojo.CardIndexPOJO;
 import net.mcczai.cardduel.resources.pojo.CardDataPOJO;
 import net.minecraft.resources.ResourceLocation;

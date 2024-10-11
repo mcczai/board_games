@@ -45,17 +45,16 @@ public abstract class AbstractCardItem extends Item implements ICard {
     }
 
     /**
-     *内有屎山，记得改
+     *根据卡牌类型进行分类注册(是否需要？)
      */
-    public static NonNullList<ItemStack> ItemTab(CardTabType type){
+    // TODO: 这里糠了 index,cardDataPOJO,key均为null
+    public static @NotNull NonNullList<ItemStack> fillItemTab(CardTabType type){
         NonNullList<ItemStack> stacks = NonNullList.create();
         CdAPI.getAllCommonCardIndex().stream().sorted(idNameSort()).forEach(entry ->{
             CommonCardIndex index = entry.getValue();
             CardDataPOJO cardDataPOJO = index.getCardData();
             String key = type.name().toLowerCase(Locale.US);
-            String indexType = index.getType();
 
-            // TODO:这是屎山，记得改
             switch (key){
                 case "trap" :
                     ItemStack itemStack = CardItemBuilder.create()

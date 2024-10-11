@@ -6,10 +6,11 @@ import com.google.gson.GsonBuilder;
 import net.mcczai.cardduel.API.resource.ResourceManager;
 import net.mcczai.cardduel.CardduelMod;
 import net.mcczai.cardduel.config.common.OtherConfig;
-import net.mcczai.cardduel.resources.loader.CardDataLoader;
+import net.mcczai.cardduel.resources.loader.CommonCardDataLoader;
 import net.mcczai.cardduel.resources.loader.CommonCardIndexLoader;
 import net.mcczai.cardduel.util.GetJarResources;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,7 +35,7 @@ public class CommonCardPackLoader {
 
     public static final Map<ResourceLocation, CommonCardIndex> CARD_INDEX = Maps.newHashMap();
 
-    @Deprecated//TODO :这里是创建目录的地方，未检查出客户端为何不执行前此TODO不要删除
+    //TODO :这里是创建目录的地方，未检查出客户端为何不执行前此TODO不要删除
 
     /**
      *创建目录，并复制默认包至该目录
@@ -101,18 +102,21 @@ public class CommonCardPackLoader {
         }
     }
 
-    public static void readDirAsset(File root){
+    public static void readDirAsset(@NotNull File root){
         if (root.isDirectory()){
-            CardDataLoader.load(root);
+            CommonCardDataLoader.load(root);
         }
     }
 
     private static void readZipAsset(File file) {
         try (ZipFile zipFile = new ZipFile(file)) {
+            if (VersionChecker.noneMatch(zipFile,file.toPath())){
+                return;
+            }
             Enumeration<? extends ZipEntry> iteration = zipFile.entries();
             while (iteration.hasMoreElements()) {
                 String path = iteration.nextElement().getName();
-                CardDataLoader.load(zipFile, path);
+                CommonCardDataLoader.load(zipFile, path);
             }
         } catch (IOException ioException) {
             ioException.printStackTrace();

@@ -23,7 +23,7 @@ public class CardduelCreativeTab {
             .displayItems((parameters, output) -> {
                 output.accept(ModItem.CARD_BUNDLE_ITEM);
                 output.accept(ModItem.DUELTABLE_BLOCK_ITEM);
-                output.acceptAll(AbstractCardItem.ItemTab(CardTabType.TRAP));
+                output.acceptAll(AbstractCardItem.fillItemTab(CardTabType.TRAP));
             }).build());
     // TODO:这里有按牌类型分类的实现，暂时注释掉
   /*  public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MANA_TAB = CARDDUEL_TABS.register("mana_tab", () -> CreativeModeTab.builder()
@@ -31,7 +31,7 @@ public class CardduelCreativeTab {
                     .withTabsBefore(TARP_TAB.getId())
                     .icon(() -> ModItem.CARD_ITEM.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
-                        output.acceptAll(AbstractCardItem.ItemTab(CardTabType.MANA));
+                        output.acceptAll(AbstractCardItem.fillItemTab(CardTabType.MANA));
             }).build());
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> EQUIP_TAB = CARDDUEL_TABS.register("equip_tab", () -> CreativeModeTab.builder()
@@ -39,7 +39,7 @@ public class CardduelCreativeTab {
             .withTabsBefore(MANA_TAB.getId())
             .icon(() -> ModItem.CARD_ITEM.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
-                output.acceptAll(AbstractCardItem.ItemTab(CardTabType.EQUIP));
+                output.acceptAll(AbstractCardItem.fillItemTab(CardTabType.EQUIP));
             }).build());
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> SUMMON_TAB = CARDDUEL_TABS.register("summon_tab", () -> CreativeModeTab.builder()
@@ -47,6 +47,6 @@ public class CardduelCreativeTab {
             .withTabsBefore(EQUIP_TAB.getId())
             .icon(() -> ModItem.CARD_ITEM.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
-                output.acceptAll(AbstractCardItem.ItemTab(CardTabType.SUMMON));
+                output.acceptAll(AbstractCardItem.fillItemTab(CardTabType.SUMMON));
             }).build());*/
 }

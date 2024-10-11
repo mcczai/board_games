@@ -15,7 +15,7 @@ public class ReloadResourceEvent {
 
     @SubscribeEvent
     public static void onTextureStitchEventPost(@NotNull TextureAtlasStitchedEvent event) {
-        if (BLOCK_ATLAS_TEXTURE.equals(event.getAtlas().location())){
+        if (BLOCK_ATLAS_TEXTURE != null && BLOCK_ATLAS_TEXTURE.equals(event.getAtlas().location())) {
             ClientReloadManager.reloadAllPack();
         }
     }
