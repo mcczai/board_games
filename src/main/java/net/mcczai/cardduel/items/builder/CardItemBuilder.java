@@ -2,6 +2,7 @@ package net.mcczai.cardduel.items.builder;
 
 import com.google.common.base.Preconditions;
 import net.mcczai.cardduel.API.CdAPI;
+import net.mcczai.cardduel.init.ModItem;
 import net.mcczai.cardduel.items.AbstractCardItem;
 import net.mcczai.cardduel.items.CardItem;
 import net.mcczai.cardduel.items.CardItemManager;
@@ -11,6 +12,7 @@ import net.mcczai.cardduel.resources.pojo.CardIndexPOJO;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredItem;
 import org.jetbrains.annotations.NotNull;
 
 public final class CardItemBuilder {
@@ -69,9 +71,10 @@ public final class CardItemBuilder {
         String type = CdAPI.getCommonCardIndex(cardId).map(CommonCardIndex::getType).orElse(null);
         Preconditions.checkArgument(type != null, "Could not found card id: " + cardId);
 
-        DeferredHolder<AbstractCardItem, CardItem> cardItemDeferredHolder = CardItemManager.getCardItemRegistryObject(type);
+        //DeferredItem<? extends AbstractCardItem> cardItemDeferredHolder = CardItemManager.getCardItemRegistryObject(type);
 
-        ItemStack card = new ItemStack(cardItemDeferredHolder.get(),this.count);
+        //ItemStack card = new ItemStack(cardItemDeferredHolder.get(),this.count);
+        ItemStack card = new ItemStack(ModItem.CARD_ITEM.get(),this.count);
         if (card.getItem() instanceof ICard iCard){
             iCard.setCardId(card,this.cardId);
             iCard.setHP(card,this.hp);

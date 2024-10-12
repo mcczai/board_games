@@ -16,12 +16,6 @@ public enum CardAssetManager {
     }
 
     public CardDataPOJO getCardData(ResourceLocation registryName){
-        for (ResourceLocation location : cardData.keySet()){
-            System.out.println(location);
-        }
-
-        System.out.println(registryName);
-
         return cardData.get(registryName);
     }
 

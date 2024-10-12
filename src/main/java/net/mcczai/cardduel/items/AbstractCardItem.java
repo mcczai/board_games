@@ -2,10 +2,12 @@ package net.mcczai.cardduel.items;
 
 import net.mcczai.cardduel.API.CdAPI;
 import net.mcczai.cardduel.API.item.CardTabType;
+import net.mcczai.cardduel.CardduelMod;
 import net.mcczai.cardduel.client.resource.ClientCardIndex;
 import net.mcczai.cardduel.items.builder.CardItemBuilder;
 import net.mcczai.cardduel.resources.CommonCardIndex;
 import net.mcczai.cardduel.resources.pojo.CardDataPOJO;
+import net.mcczai.cardduel.resources.pojo.CardIndexPOJO;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
@@ -48,11 +50,14 @@ public abstract class AbstractCardItem extends Item implements ICard {
         CdAPI.getAllCommonCardIndex().stream().sorted().forEach(entry ->{
             CommonCardIndex index = entry.getValue();
             CardDataPOJO cardDataPOJO = index.getCardData();
+            CardIndexPOJO cardIndexPOJO = index.getPojo();
             String key = type.name().toLowerCase(Locale.US);
 
             switch (key){
                 case "trap" :
                     ItemStack itemStack = CardItemBuilder.create()
+                            //TODO: 这里是否要改成这样？ 用于设置卡牌名称
+                            //TODO: .setId(ResourceLocation.fromNamespaceAndPath(CardduelMod.MODID , cardIndexPOJO.getName()))
                             .setId(entry.getKey())
                             .setMP(cardDataPOJO.getMP())
                             .setSkill(cardDataPOJO.getSKILL())

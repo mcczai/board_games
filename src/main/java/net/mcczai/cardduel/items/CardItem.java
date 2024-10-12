@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 public class CardItem extends AbstractCardItem implements CardDataAccessor {
 
     public CardItem(Properties properties) {
-        super(new Properties().stacksTo(1));
+        super(properties.stacksTo(1));
     }
 
     /**

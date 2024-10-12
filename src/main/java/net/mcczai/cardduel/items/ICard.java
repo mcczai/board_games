@@ -49,9 +49,9 @@ public interface ICard {
 
     void setATK(ItemStack Card,int amount);
     /**
-     *读取手中卡牌的类型
+     * 读取手中卡牌的类型
      */
-    int getType(ItemStack Card);
+    String getType(ItemStack Card);
 
     void setType(ItemStack Card, String type);
 

@@ -1,6 +1,5 @@
 package net.mcczai.cardduel.API.item.nbt;
 
-import com.google.errorprone.annotations.Var;
 import net.mcczai.cardduel.init.ModDataComponents;
 import net.mcczai.cardduel.items.ICard;
 import net.mcczai.cardduel.resources.DefaultAssets;
@@ -81,12 +80,12 @@ public interface CardDataAccessor extends ICard{
     }
 
     @Override
-    default int getType(@NotNull ItemStack card){
+    default String getType(@NotNull ItemStack card){
         CompoundTag tag = card.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag();
         if (tag.get("Type") != null) {
-            return tag.getInt("Type");
+            return tag.getString("Type");
         }
-        return 0;
+        return "tarp";
     }
 
     default void setType(@NotNull ItemStack card, String type){

@@ -24,7 +24,7 @@ import net.neoforged.neoforge.registries.RegisterEvent;
 import net.neoforged.neoforge.registries.datamaps.DataMapsUpdatedEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
+// TODO: 记得看bug.md里的归档！！！！！！！！
 @Mod(CardduelMod.MODID)
 public class CardduelMod {
 

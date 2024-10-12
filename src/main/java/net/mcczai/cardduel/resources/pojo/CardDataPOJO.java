@@ -38,7 +38,7 @@ public class CardDataPOJO {
         return DESCRIPTION;
     }
 
-    public String getTYPE(){
+    public  String getTYPE(){
         return TYPE;
     }
 
