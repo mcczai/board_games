@@ -1,7 +1,7 @@
 package net.mcczai.cardduel.items;
 
-import net.mcczai.cardduel.init.ModBlocks;
 import net.mcczai.cardduel.API.item.nbt.CardDataAccessor;
+import net.mcczai.cardduel.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;

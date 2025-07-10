@@ -1,24 +1,15 @@
 package net.mcczai.cardduel.init;
 
-import net.mcczai.cardduel.items.AbstractCardItem;
 import net.mcczai.cardduel.items.CardBundleItem;
 import net.mcczai.cardduel.items.CardItem;
 import net.mcczai.cardduel.items.CardItemManager;
-import net.mcczai.cardduel.resources.pojo.CardDataPOJO;
-import net.mcczai.cardduel.resources.pojo.CardIndexPOJO;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.neoforged.bus.api.BusBuilder;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.RegisterEvent;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.function.Supplier;
 
 import static net.mcczai.cardduel.CardduelMod.MODID;
 

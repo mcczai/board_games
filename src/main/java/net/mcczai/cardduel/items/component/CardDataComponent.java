@@ -2,9 +2,6 @@ package net.mcczai.cardduel.items.component;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
 
 public record CardDataComponent(int atk, int hp, int mp, String type
         ,String skill1 ,String skill2 ,String skill3 ,String skill4 ,String skill5) {

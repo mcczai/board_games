@@ -2,7 +2,6 @@ package net.mcczai.cardduel.items;
 
 import net.mcczai.cardduel.API.CdAPI;
 import net.mcczai.cardduel.API.item.CardTabType;
-import net.mcczai.cardduel.CardduelMod;
 import net.mcczai.cardduel.client.resource.ClientCardIndex;
 import net.mcczai.cardduel.items.builder.CardItemBuilder;
 import net.mcczai.cardduel.resources.CommonCardIndex;
@@ -17,9 +16,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Comparator;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 
 public abstract class AbstractCardItem extends Item implements ICard {

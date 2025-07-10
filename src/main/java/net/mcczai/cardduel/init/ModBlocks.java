@@ -1,9 +1,7 @@
 package net.mcczai.cardduel.init;
 
 import net.mcczai.cardduel.block.DuelTableBlock;
-import net.mcczai.cardduel.block.entity.DuelTableBlockEntity;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
