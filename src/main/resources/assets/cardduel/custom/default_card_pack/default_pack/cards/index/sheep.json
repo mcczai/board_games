@@ -1,0 +1,7 @@
+{
+  "name": "default_card.card.sheep.name",
+  "data": "default_pack:sheep_data",
+  "stack_size": 1,
+  "tooltip": "default_card.card.sheep.tooltip",
+  "type": "trap"
+}
