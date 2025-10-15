@@ -1,0 +1,6 @@
+{
+  "parent": "cardduel:block/dueltable_block",
+  "textures": {
+    "layer0": "cardduel:block/dueltable_block"
+  }
+}

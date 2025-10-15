@@ -1,0 +1,9 @@
+{
+  "default_card.card.sheep.name": "羊",
+  "default_card.card.sheep.description": "它是只羊，它很可爱",
+  "default_card.card.sheep.tooltip": "是的，他是只羊",
+
+  "default_card.card.test.description": "测试卡牌",
+  "default_card.card.test.name": "测试卡牌",
+  "default_card.card.test.tooltip": "测试卡牌"
+}

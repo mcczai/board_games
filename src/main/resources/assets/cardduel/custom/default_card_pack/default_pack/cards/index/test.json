@@ -1,0 +1,7 @@
+{
+  "name": "default_card.card.test.name",
+  "data": "default_pack:test_data",
+  "stack_size": 1,
+  "tooltip": "default_card.card.test.tooltip",
+  "type": "114514"
+}
