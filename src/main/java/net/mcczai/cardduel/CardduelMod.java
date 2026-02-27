@@ -3,6 +3,7 @@ package net.mcczai.cardduel;
 
 import net.mcczai.cardduel.API.resource.ResourceManager;
 import net.mcczai.cardduel.config.CommonConfig;
+import net.mcczai.cardduel.init.ModBlockEntities;
 import net.mcczai.cardduel.init.ModBlocks;
 import net.mcczai.cardduel.init.ModItem;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -27,6 +28,7 @@ public class CardduelMod {
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
         ModItem.ITEMS.register(bus);
         ModBlocks.BLOCKS.register(bus);
+        ModBlockEntities.BLOCK_ENTITIES.register(bus);
         CardduelCreativeTab.CREATIVE_MODE_TABS.register(bus);
 
         registerDefaultExtraCardPack();

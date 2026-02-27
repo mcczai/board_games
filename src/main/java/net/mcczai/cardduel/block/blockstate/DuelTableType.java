@@ -9,7 +9,7 @@ public enum DuelTableType implements StringRepresentable {
 
     private final String name;
 
-    private DuelTableType(String name){
+    DuelTableType(String name){
         this.name = name;
     }
 

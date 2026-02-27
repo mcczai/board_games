@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "net.mcczai.cardduel.mixin",
   "compatibilityLevel": "JAVA_17",
-  "refmap": "tacz.refmap.json",
+  "refmap": "cardduel.refmap.json",
   "mixins": [
   ],
   "client": [

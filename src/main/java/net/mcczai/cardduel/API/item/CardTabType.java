@@ -18,5 +18,5 @@ public enum CardTabType {
     EQUIP,
 //召唤
     @SerializedName("summon")
-    SUMMON;
+    SUMMON
 }

@@ -12,7 +12,7 @@ import java.util.Map;
 
 @Mixin(ClientLanguage.class)
 public class LanguageMixin {
-    @Inject(method = "getOrDefault(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;", at = @At(value = "HEAD"), cancellable = true)
+    @Inject(method = "getOrDefault", at = @At(value = "HEAD"), cancellable = true)
     public void getCustomLanguage(String key, String defaultValue, CallbackInfoReturnable<String> call) {
         String code = Minecraft.getInstance().getLanguageManager().getSelected();
         Map<String, String> languages = ClientAssetManager.INSTANCE.getLanguages(code);
@@ -24,7 +24,7 @@ public class LanguageMixin {
         }
     }
 
-    @Inject(method = "has(Ljava/lang/String;)Z", at = @At(value = "HEAD"), cancellable = true)
+    @Inject(method = "has", at = @At(value = "HEAD"), cancellable = true)
     public void hasCustomLanguage(String key, CallbackInfoReturnable<Boolean> call) {
         String code = Minecraft.getInstance().getLanguageManager().getSelected();
         Map<String, String> languages = ClientAssetManager.INSTANCE.getLanguages(code);

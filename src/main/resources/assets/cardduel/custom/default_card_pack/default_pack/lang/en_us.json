@@ -1,0 +1,9 @@
+{
+  "default_card.card.sheep.name": "sheep",
+  "default_card.card.sheep.description": "this a sheep，cute",
+  "default_card.card.sheep.tooltip": "ye,this a sheep",
+
+  "default_card.card.test.description": "test card",
+  "default_card.card.test.name": "test card",
+  "default_card.card.test.tooltip": "test card"
+}

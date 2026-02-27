@@ -38,6 +38,7 @@ public final class LanguageLoader {
                 Map<String, String> languages = Maps.newHashMap();
                 Language.loadFromJson(zipEntryStream, languages::put);
                 ClientAssetManager.INSTANCE.putLanguage(languageCode, languages);
+                CardduelMod.LOGGER.info("Loaded {} language entries for {}", languages.size(), languageCode);
                 return true;
             } catch (IOException | JsonSyntaxException | JsonIOException exception) {
                 CardduelMod.LOGGER.warn(MARKER, "Failed to read language file: {}, entry: {}", zipFile, entry);

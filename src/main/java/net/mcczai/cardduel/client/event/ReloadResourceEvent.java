@@ -14,10 +14,16 @@ public class ReloadResourceEvent {
     public static final ResourceLocation BLOCK_ATLAS_TEXTURE = new ResourceLocation("textures/atlas/blocks.png");;
 
     @SubscribeEvent
-    public static void onTextureStitchEventPost(@NotNull TextureStitchEvent.Post event) {
-        if (BLOCK_ATLAS_TEXTURE != null && BLOCK_ATLAS_TEXTURE.equals(event.getAtlas().location())) {
+    public static void onTextureStitchEventPre(@NotNull TextureStitchEvent.Post event) {
+        if (BLOCK_ATLAS_TEXTURE.equals(event.getAtlas().location())) {
             ClientReloadManager.reloadAllPack();
         }
     }
 
+    @SubscribeEvent
+    public static void onTextureStitchEventPost(@NotNull TextureStitchEvent.Post event) {
+        if (BLOCK_ATLAS_TEXTURE.equals(event.getAtlas().location())) {
+            //预留
+        }
+    }
 }
