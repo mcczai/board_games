@@ -1,6 +1,7 @@
 {
   "name": "default_card.card.test.name",
   "data": "default_pack:test_data",
+  "texture": "default_pack:textures/test",
   "stack_size": 1,
   "tooltip": "default_card.card.test.tooltip",
   "type": "mana"
