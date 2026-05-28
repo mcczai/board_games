@@ -3,6 +3,7 @@ package net.mcczai.cardduel.items;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
@@ -24,7 +25,7 @@ public interface ICard {
      *
      * @return boolean 判断主手是否手持卡牌
      */
-    static boolean mainHandHoldCard(LivingEntity livingEntity)
+    static boolean mainHandHoldCard(@NotNull LivingEntity livingEntity)
     {
         return livingEntity.getMainHandItem().getItem() instanceof ICard;
     }

@@ -6,6 +6,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +24,7 @@ public class FilePackTexture extends AbstractTexture {
     }
 
     @Override
-    public void load(ResourceManager resourceManager) throws IOException {
+    public void load(@NotNull ResourceManager resourceManager) throws IOException {
         if (!RenderSystem.isOnRenderThreadOrInit()) {
             RenderSystem.recordRenderCall(this::doLoad);
         } else {
@@ -44,9 +45,5 @@ public class FilePackTexture extends AbstractTexture {
                 e.printStackTrace();
             }
         }
-    }
-
-    public ResourceLocation getRegisterId() {
-        return registerId;
     }
 }

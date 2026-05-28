@@ -8,6 +8,7 @@ import net.mcczai.cardduel.client.resource.ClientAssetManager;
 import net.minecraft.locale.Language;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,7 +47,7 @@ public final class LanguageLoader {
         return false;
     }
 
-    public static void load(File root) {
+    public static void load(@NotNull File root) {
         Path filePath = root.toPath().resolve("lang");
         if (!Files.isDirectory(filePath)) {
             return;

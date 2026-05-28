@@ -9,7 +9,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.TextureAtlasStitchedEvent;
 import org.jetbrains.annotations.NotNull;
 
-@EventBusSubscriber(value = Dist.CLIENT,bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class ReloadResourceEvent {
     public static final ResourceLocation BLOCK_ATLAS_TEXTURE = ResourceLocation.tryBySeparator("textures/default/blocks.png",':');
 
