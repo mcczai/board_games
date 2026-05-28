@@ -6,7 +6,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 
-@EventBusSubscriber(modid = CardduelMod.MODID,bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = CardduelMod.MODID)
 public class CommonLoadPack {
 
     @SubscribeEvent

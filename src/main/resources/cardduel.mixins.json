@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "package": "net.mcczai.cardduel.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "cardduel.refmap.json",
+  "client": [
+    "Client.LanguageMixin"
+  ]
+}
