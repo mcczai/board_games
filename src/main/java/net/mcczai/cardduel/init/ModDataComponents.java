@@ -5,6 +5,7 @@ import net.mcczai.cardduel.CardduelMod;
 import net.mcczai.cardduel.items.inventory.CardBundleContents;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -34,6 +35,10 @@ public class ModDataComponents {
 
     public static final DeferredHolder<DataComponentType<?>,DataComponentType<String>> SKILL = DATA_COMPONENTS.registerComponentType(
             "skill",builder -> builder.persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8)
+    );
+
+    public static final DeferredHolder<DataComponentType<?>,DataComponentType<ResourceLocation>> CARD_ID = DATA_COMPONENTS.registerComponentType(
+            "card_id",builder -> builder.persistent(ResourceLocation.CODEC).networkSynchronized(ByteBufCodecs.STRING_UTF8.map(ResourceLocation::parse, ResourceLocation::toString))
     );
 
     public static final DeferredHolder<DataComponentType<?>,DataComponentType<CardBundleContents>> CARD_BUNDLE = DATA_COMPONENTS.registerComponentType(
