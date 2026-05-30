@@ -19,6 +19,7 @@ public class ClientCardIndex {
     private CardDataPOJO cardDataPOJO;
     private @Nullable String tooltipKey;
     private int stackSize;
+    private @Nullable ResourceLocation texture;
     private CardIndexPOJO pojo;
 
     private ClientCardIndex(){}
@@ -35,6 +36,7 @@ public class ClientCardIndex {
         Preconditions.checkArgument(cardIndexPOJO != null,"index object file is empty");
         Preconditions.checkArgument(StringUtils.isNoneBlank(cardIndexPOJO.getType()), "index object missing type field");
         index.type = cardIndexPOJO.getType();
+        index.texture = cardIndexPOJO.getTexture();
     }
 
     public static void CheckName(@NotNull CardIndexPOJO cardIndexPOJO, @NotNull ClientCardIndex index){
@@ -56,6 +58,11 @@ public class ClientCardIndex {
 
     public String getType() {
         return type;
+    }
+
+    @Nullable
+    public ResourceLocation getTexture() {
+        return texture;
     }
 
     public String getName(){

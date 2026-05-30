@@ -24,6 +24,15 @@ public class CardIndexPOJO {
     @Nullable
     private String type;
 
+    @SerializedName("texture")
+    @Nullable
+    private ResourceLocation texture;
+
+    @Nullable
+    public ResourceLocation getTexture() {
+        return texture;
+    }
+
     public String getName() {
         return name;
     }
