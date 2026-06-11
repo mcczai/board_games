@@ -27,7 +27,7 @@ import static net.mcczai.cardduel.resources.CommonCardPackLoader.GSON;
 
 public class CommonCardIndexLoader {
     private static final Pattern CARD_INDEX_PATTERN = Pattern.compile("^(\\w+)/cards/index/(\\w+)\\.json$");
-    private static final Marker MARKER = MarkerManager.getMarker("CommonGunIndexLoader");
+    private static final Marker MARKER = MarkerManager.getMarker("CommonCardIndexLoader");
 // TODO: 这里有注册空间名错误！！！
     public static void loadCardIndex(String path, ZipFile zipFile) throws IOException {
         Matcher matcher = CARD_INDEX_PATTERN.matcher(path);

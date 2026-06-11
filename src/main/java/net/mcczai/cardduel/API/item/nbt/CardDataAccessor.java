@@ -69,7 +69,7 @@ public interface CardDataAccessor extends ICard{
         if (tag.get("Type") != null) {
             return tag.getString("Type");
         }
-        return "tarp";
+        return "trap";
     }
 
     default void setType(@NotNull ItemStack card, String type){

@@ -42,7 +42,7 @@ public class CardBundleItem extends Item {
                         ItemStack itemstack2 = slot.safeInsert(itemstack1);
                         bundlecontents$mutable.tryInsert(itemstack2);
                     }
-                } else if (itemstack.getItem().canFitInsideContainerItems()) {
+                } else if (itemstack.getItem().canFitInsideContainerItems() && ICard.getICardOrNull(itemstack) != null) {
                     int i = bundlecontents$mutable.tryTransfer(slot, player);
                     if (i > 0) {
                         this.playInsertSound(player);

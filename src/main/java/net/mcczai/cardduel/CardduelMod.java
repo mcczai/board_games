@@ -36,7 +36,7 @@ public class CardduelMod {
 
     public static void registerDefaultExtraCardPack() {
         String jarDefaultPackPath = String.format("/assets/%s/custom/%s",MODID,DEFAULT_PACK);
-        ResourceManager.registerExtraGunPack(CardduelMod.class,jarDefaultPackPath);
+        ResourceManager.registerExtraCardPack(CardduelMod.class,jarDefaultPackPath);
     }
 
 

@@ -30,7 +30,8 @@ public abstract class AbstractCardItem extends Item implements ICard {
     /**
      * 右键时触发的事件
      */
-    public abstract void Rclick(ItemStack cardItem, LivingEntity Player, BlockPos blockPos);
+    public abstract void rClick(ItemStack cardItem, LivingEntity Player, BlockPos blockPos);
+
 
     @Override
     public @NotNull Component getName(@NotNull ItemStack stack) {

@@ -38,9 +38,9 @@ public class CommonCardIndex {
         Preconditions.checkArgument(pojoData != null,"index object missing pojoData field");
         CardDataPOJO data = CardAssetManager.INSTANCE.getCardData(pojoData);
         Preconditions.checkArgument(data != null, "there is no corresponding data file");
-        Preconditions.checkArgument(data.getATK() >= 1, "HP count must >= 1");
+        Preconditions.checkArgument(data.getATK() >= 1, "ATK count must >= 1");
         Preconditions.checkArgument(data.getHP() >= 1, "HP count must >= 1");
-        Preconditions.checkArgument(data.getMP() >= 1, "HP count must >= 1");
+        Preconditions.checkArgument(data.getMP() >= 1, "MP count must >= 1");
         Preconditions.checkArgument(data.getDESCRIPTION() != null, "description id is empty");
         Preconditions.checkArgument(data.getTYPE() != null, "type id is empty");
         Preconditions.checkArgument(data.getSKILL() != null, "skill id is empty");

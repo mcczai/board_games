@@ -29,7 +29,6 @@ public enum CardTooltipPart {
 
     public static void setHideFlags(ItemStack stack,int mask){
         CompoundTag tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
-        int itemHP = tag.getInt("HideFlags");
         tag.putInt("HideFlags",mask);
         stack.set(DataComponents.CUSTOM_DATA,CustomData.of(tag));
     }

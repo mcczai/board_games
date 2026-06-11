@@ -14,7 +14,7 @@ public final class ResourceManager {
      * @param modMainClass      主类
      * @param extraFolderPath   需要进行解压的文件夹路径
      */
-    public static void registerExtraGunPack(Class<?> modMainClass, String extraFolderPath) {
+    public static void registerExtraCardPack(Class<?> modMainClass, String extraFolderPath) {
         EXTRA_ENTRIES.add(new ExtraEntry(modMainClass, extraFolderPath, Paths.get(extraFolderPath).getFileName().toString()));
     }
 

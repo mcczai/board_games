@@ -13,7 +13,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,25 +24,24 @@ public class CardItem extends AbstractCardItem implements CardDataAccessor {
         super(properties.stacksTo(1));
     }
 
+    @Override
+    public void rClick(ItemStack cardItem, LivingEntity Player, BlockPos blockPos) {
+
+    }
+
     /**
      *右键牌桌时，判断卡是否为已加入战斗的卡
      */
     @Override
     public @NotNull InteractionResult useOn(@NotNull UseOnContext context) {
         Level level = context.getLevel();
-        Block clickedBlock = level.getBlockState(context.getClickedPos()).getBlock();
         CompoundTag tag = context.getItemInHand().getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         boolean joined = tag.getBoolean("IsJoinedDuel");
 
-        if (clickedBlock == ModBlocks.DUELTABLE_BLOCK.get() && joined){
+        if (level.getBlockState(context.getClickedPos()).is(ModBlocks.DUELTABLE_BLOCK.get()) && joined){
 
         }
         return InteractionResult.SUCCESS;
-    }
-
-    @Override
-    public void Rclick(ItemStack cardItem, LivingEntity Player, BlockPos blockPos) {
-
     }
 
     @Override

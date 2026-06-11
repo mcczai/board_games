@@ -24,7 +24,7 @@ import java.util.zip.ZipFile;
 import static net.mcczai.cardduel.client.resource.ClientCardPackLoader.GSON;
 
 public class PackInfoLoader {
-    private static final Marker MARKER = MarkerManager.getMarker("CreativeTabLoader");
+    private static final Marker MARKER = MarkerManager.getMarker("PackInfoLoader");
     private static final Pattern PACK_INFO_PATTERN = Pattern.compile("^(\\w+)/pack\\.json$");
 
     public static boolean load(ZipFile zipFile, String zipPath) {

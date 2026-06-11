@@ -58,10 +58,10 @@ public final class VersionChecker {
         }
         try (InputStream stream = Files.newInputStream(packInfoFilePath)){
             Info info = GSON.fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), Info.class);
-            return modVersionAllMatch((Info) info);
+            return modVersionAllMatch(info);
         }catch (IOException | JsonSyntaxException | JsonIOException | InvalidVersionSpecificationException exception) {
             CardduelMod.LOGGER.warn(MARKER, "Failed to read info json: {}", packInfoFilePath);
-            CardduelMod.LOGGER.warn(exception.getMessage());
+            CardduelMod.LOGGER.warn(MARKER, "Exception:", exception);
         }
         return true;
     }
@@ -88,7 +88,7 @@ public final class VersionChecker {
             } catch (IOException | JsonSyntaxException | JsonIOException |
                      InvalidVersionSpecificationException exception) {
                 CardduelMod.LOGGER.warn(MARKER, "Failed to read info json: {}", path);
-                CardduelMod.LOGGER.warn(exception.getMessage());
+                CardduelMod.LOGGER.warn(MARKER, "Exception:", exception);
             }
         }
         return true;

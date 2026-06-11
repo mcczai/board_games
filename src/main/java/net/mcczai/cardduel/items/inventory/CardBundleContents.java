@@ -3,7 +3,6 @@ package net.mcczai.cardduel.items.inventory;
 import com.google.common.collect.Lists;
 import com.mojang.serialization.Codec;
 import net.mcczai.cardduel.init.ModDataComponents;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -11,7 +10,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BeehiveBlockEntity;
 import org.apache.commons.lang3.math.Fraction;
 
 import javax.annotation.Nullable;
@@ -53,8 +51,7 @@ public class CardBundleContents implements TooltipComponent {
         if (cardBundleContents != null) {
             return BUNDLE_IN_BUNDLE_WEIGHT.add(cardBundleContents.weight());
         } else {
-            List<BeehiveBlockEntity.Occupant> list = (List)stack.getOrDefault(DataComponents.BEES, List.of());
-            return !list.isEmpty() ? Fraction.ONE : Fraction.getFraction(1, stack.getMaxStackSize());
+            return Fraction.getFraction(1, stack.getMaxStackSize());
         }
     }
     public ItemStack getItemUnsafe(int index){

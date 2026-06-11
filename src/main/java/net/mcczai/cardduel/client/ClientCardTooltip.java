@@ -25,12 +25,14 @@ public class ClientCardTooltip implements ClientTooltipComponent {
     private @Nullable List<FormattedCharSequence> desc;
     
     private int maxWidth;
+    private int height;
 
     public ClientCardTooltip(CardTooltip tooltip){
         this.card = tooltip.getCard();
         this.iCard = tooltip.getiCard();
         this.cardIndex = tooltip.getCardIndex();
         this.maxWidth = 0;
+        this.height = 0;
         this.getText();
     }
 
@@ -38,7 +40,7 @@ public class ClientCardTooltip implements ClientTooltipComponent {
 
     @Override
     public int getHeight() {
-        return 0;
+        return height;
     }
 
     @Override
@@ -61,6 +63,7 @@ public class ClientCardTooltip implements ClientTooltipComponent {
                 for (FormattedCharSequence sequence : this.desc){
                     this.maxWidth = Math.max(font.width(sequence),this.maxWidth);
                 }
+                this.height = font.lineHeight * this.desc.size() + 2;
             }
         }
     }
