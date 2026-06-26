@@ -15,8 +15,6 @@ import net.minecraft.world.level.Level;
 
 public class CardBundleItem extends Item {
 
-    public static final int MAX_ROW = 5;
-
     public CardBundleItem(Properties properties) {
         super(properties.stacksTo(1).fireResistant());
     }
@@ -75,10 +73,6 @@ public class CardBundleItem extends Item {
 
     private void playInsertSound(Entity entity) {
         entity.playSound(SoundEvents.BUNDLE_INSERT, 0.8F, 0.8F + entity.level().getRandom().nextFloat() * 0.4F);
-    }
-
-    private void playDropContentsSound(Entity entity) {
-        entity.playSound(SoundEvents.BUNDLE_DROP_CONTENTS, 0.8F, 0.8F + entity.level().getRandom().nextFloat() * 0.4F);
     }
 
 }

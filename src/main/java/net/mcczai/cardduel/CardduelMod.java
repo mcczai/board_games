@@ -21,15 +21,15 @@ public class CardduelMod {
 
     public static final Logger LOGGER = LogManager.getLogger(MODID);
 
-    public CardduelMod(IEventBus Bus, ModContainer modContainer){
+    public CardduelMod(IEventBus bus, ModContainer modContainer){
 
         modContainer.registerConfig(ModConfig.Type.COMMON,CommonConfig.init());
 
-        ModBlocks.BLOCKS.register(Bus);
-        ModItem.ITEMS.register(Bus);
-        ModBlockEntities.BLOCK_ENTITIES.register(Bus);
-        ModDataComponents.DATA_COMPONENTS.register(Bus);
-        CardduelCreativeTab.CARDDUEL_TABS.register(Bus);
+        ModBlocks.BLOCKS.register(bus);
+        ModItem.ITEMS.register(bus);
+        ModBlockEntities.BLOCK_ENTITIES.register(bus);
+        ModDataComponents.DATA_COMPONENTS.register(bus);
+        CardduelCreativeTab.CARDDUEL_TABS.register(bus);
 
         registerDefaultExtraCardPack();
     }
