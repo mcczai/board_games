@@ -17,6 +17,7 @@ public final class CardItemBuilder {
     private String type = null;
     private ResourceLocation cardId;
     private String skill;
+    private String tribe;
 
     private CardItemBuilder(){
 
@@ -61,6 +62,11 @@ public final class CardItemBuilder {
         return this;
     }
 
+    public CardItemBuilder setTribe(String tribe){
+        this.tribe = tribe;
+        return this;
+    }
+
     public @NotNull ItemStack build(){
         String type = CdAPI.getCommonCardIndex(cardId).map(CommonCardIndex::getType).orElse(null);
         Preconditions.checkArgument(type != null, "Could not found card id: " + cardId);
@@ -76,6 +82,7 @@ public final class CardItemBuilder {
             iCard.setATK(card,this.atk);
             iCard.setType(card,this.type);
             iCard.setSkill(card,this.skill);
+            iCard.setTribe(card,this.tribe);
         }
         return card;
     }

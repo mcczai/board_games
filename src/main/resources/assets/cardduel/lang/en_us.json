@@ -6,6 +6,10 @@
 
   "block.cardduel.dueltable_block": "Duel Table",
 
-  "item.cardduel.card_bundle": "Card Bundle"
+  "item.cardduel.card_bundle": "Card Bundle",
 
+  "cardduel.tribe.ender": "Ender",
+  "cardduel.tribe.nature": "Nature",
+  "cardduel.tribe.monster": "Monster",
+  "cardduel.tribe.ocean": "Ocean"
 }

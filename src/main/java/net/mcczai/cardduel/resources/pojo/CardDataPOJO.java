@@ -22,6 +22,9 @@ public class CardDataPOJO {
     @SerializedName("skill")
     private String SKILL = "1";
 
+    @SerializedName("tribe")
+    private String TRIBE = null;
+
     public int getHP(){
         return HP;
     }
@@ -44,6 +47,10 @@ public class CardDataPOJO {
 
     public String getSKILL(){
         return SKILL;
+    }
+
+    public String getTRIBE(){
+        return TRIBE;
     }
 
 }

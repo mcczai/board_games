@@ -1,14 +1,14 @@
 # Card Duel Mod — 问题清单
 
-> 自动生成于代码审查 | 共 **35** 处问题（已修复 24 处）
+> 自动生成于代码审查 | 共 **33** 处问题（已修复 26 处）
 
 ---
 
-## 🔴 Critical (6) — 会导致崩溃/数据损坏/功能完全不可用
+## 🔴 Critical (5) — 会导致崩溃/数据损坏/功能完全不可用
 
 | # | 文件 | 行号 | 说明 |
 |---|------|------|------|
-| 1 | `items/AbstractCardItem.java` | 56-104 | `fillItemTab` 的 `switch` 缺少 `break`，所有 case 穿透到底部 default，导致每张卡在创造标签页重复添加 5 次 |
+| ~~1~~ | ~~`items/AbstractCardItem.java`~~ | ~~56-104~~ | ~~`fillItemTab` 的 `switch` 缺少 `break`，所有 case 穿透到底部 default，导致每张卡在创造标签页重复添加 5 次~~ |
 | 2 | `init/ModMenuType.java` + `CardduelMod.java` | 25-34 | `ModMenuType.MENUS` 定义了 `DeferredRegister` 但构造函数中未调用 `register(bus)`，菜单类型永远不会被注册 |
 | 3 | `items/inventory/CardBundleMenu.java` | 22 | `super(MenuType.HOPPER, containerId)` 硬编码使用原版漏斗菜单类型，应使用 `ModMenuType.CARD_BUNDLE_MENU.get()` |
 | 4 | `items/inventory/CardBundleMenu.java` | 14, 28-30 | `CONTAINER_SIZE=30` 但只添加了 5 个 slot，剩余 25 个不可见槽位可能导致物品丢失/复制/同步异常 |
@@ -17,7 +17,7 @@
 
 ---
 
-## 🟠 Major (11) — 显著运行时 Bug / 逻辑错误 / 架构问题
+## 🟠 Major (10) — 显著运行时 Bug / 逻辑错误 / 架构问题
 
 | # | 文件 | 行号 | 说明 |
 |---|------|------|------|
@@ -30,7 +30,7 @@
 | 13 | `resources/CommonCardPackLoader.java` | 29 | `new ResourceLocation.Serializer()` — Minecraft 1.20.5+ 已移除 `ResourceLocation.Serializer` 内部类，**编译错误** |
 | 14 | `client/resource/serialize/ItemStackSerializer.java` | 32 | `ResourceLocation.tryBySeparator(itemName, ':')` — MC 1.21 中应为 `ResourceLocation.tryParse()`，**编译错误** |
 | 15 | `block/DuelTableBlock.java` | 39-55 | 双重桌放置逻辑要求点击位置和相邻位置均已存在方块 → `DOUBLE=true` 实际上永远无法通过正常放置达成 |
-| 16 | `init/ModDataComponents.java` 与 `API/item/nbt/CardDataAccessor.java` | - | 注册了 HP/ATK/MP/Type/Skill/CardId 等 DataComponent，但 `CardDataAccessor` 全部通过 `CUSTOM_DATA`（原始 NBT）读写，注册的组件从未被使用（仅 `CARD_ID` 和 `CARD_BUNDLE` 实际在用） |
+| ~~16~~ | ~~`init/ModDataComponents.java` 与 `API/item/nbt/CardDataAccessor.java`~~ | ~~-~~ | ~~注册了 HP/ATK/MP/Type/Skill/CardId 等 DataComponent，但 `CardDataAccessor` 全部通过 `CUSTOM_DATA`（原始 NBT）读写，注册的组件从未被使用（仅 `CARD_ID` 和 `CARD_BUNDLE` 实际在用）~~ |
 | 17 | `CardduelCreativeTab.java` | 19 | 标签页 ID `"tarp_tab"` 拼写错误，应为 `"trap"`。`en_us.json`、`zh_cn.json` 中翻译键也全部写错 |
 
 ---
@@ -96,15 +96,15 @@
 
 | 严重程度 | 数量 |
 |----------|------|
-| 🔴 Critical | 6 |
-| 🟠 Major | 11 |
+| 🔴 Critical | 5 |
+| 🟠 Major | 10 |
 | 🟡 Minor | 18 |
-| **总计** | **35** |
+| **总计** | **33** |
 
 | 类别 | 数量 |
 |------|------|
-| Bug | 11 |
+| Bug | 10 |
 | DeadCode | 15 |
-| Architecture | 6 |
+| Architecture | 5 |
 | Compilation | 1 |
 | CodeStyle/Other | 7 |

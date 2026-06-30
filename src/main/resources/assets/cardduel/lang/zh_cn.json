@@ -6,5 +6,10 @@
 
   "block.cardduel.dueltable_block": "对战桌",
 
-  "item.cardduel.card_bundle": "卡牌袋"
+  "item.cardduel.card_bundle": "卡牌袋",
+
+  "cardduel.tribe.ender": "末影",
+  "cardduel.tribe.nature": "自然",
+  "cardduel.tribe.monster": "怪物",
+  "cardduel.tribe.ocean": "海洋"
 }

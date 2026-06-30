@@ -4,5 +4,6 @@
   "atk": 1,
   "description": "default_card.card.sheep.description",
   "type": "trap",
-  "skill": "none"
+  "skill": "none",
+  "tribe": "nature"
 }

@@ -1,5 +1,6 @@
 package net.mcczai.cardduel.skill;
 
+import net.mcczai.cardduel.items.ICard;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
@@ -27,7 +28,7 @@ public class CommonSummonOperation {
      * @param HP 被攻击方血量
      * @return true为死亡，false为没死
      */
-    public static boolean deathVerdict(int ATK,int HP){
+    public static boolean deathVerdict(int ATK, int HP) {
         return ATK >= HP;
     }
 
@@ -35,32 +36,30 @@ public class CommonSummonOperation {
      * 普通死亡事件，给血量归零的召唤牌增加死亡标签
      * @param itemStack 死亡的召唤物卡牌
      */
-    public static void commonDeath(@NotNull ItemStack itemStack){
-        CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag();
+    public static void commonDeath(@NotNull ItemStack itemStack) {
+        CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         tag.putBoolean("death", true);
-        itemStack.set(DataComponents.CUSTOM_DATA,CustomData.of(tag));
+        itemStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
 
-
     /**
-     *造成伤害事件
+     * 造成伤害事件
      * @param itemStack1 攻击召唤物
      * @param itemStack2 被攻击召唤物
      */
-    public static void commonAttack(@NotNull ItemStack itemStack1 , @NotNull ItemStack itemStack2){
-        CompoundTag tag1 = itemStack1.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
-        CompoundTag tag2 = itemStack2.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
-        if (tag1.get("ATK") != null && tag2.get("HP") != null){
-            int item1ATK = tag1.getInt("ATK");
-            int item2HP = tag1.getInt("HP");
-            //做一次是否死亡判断
-            if (deathVerdict(item1ATK,item2HP)){
-                tag2.putInt("HP",0);
-                commonDeath(itemStack2);
-            }else {
-                tag2.putInt("HP",item2HP - item1ATK);
-                itemStack2.set(DataComponents.CUSTOM_DATA,CustomData.of(tag2));
-            }
+    public static void commonAttack(@NotNull ItemStack itemStack1, @NotNull ItemStack itemStack2) {
+        ICard attacker = ICard.getICardOrNull(itemStack1);
+        ICard defender = ICard.getICardOrNull(itemStack2);
+        if (attacker == null || defender == null) {
+            return;
+        }
+        int item1ATK = attacker.getATK(itemStack1);
+        int item2HP = defender.getHP(itemStack2);
+        if (deathVerdict(item1ATK, item2HP)) {
+            defender.setHP(itemStack2, 0);
+            commonDeath(itemStack2);
+        } else {
+            defender.setHP(itemStack2, item2HP - item1ATK);
         }
     }
 
@@ -69,12 +68,10 @@ public class CommonSummonOperation {
      * @param itemStack 目标召唤物
      * @param hp 增加的血量
      */
-    public static void commonTreat(@NotNull ItemStack itemStack , int hp){
-        CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
-        if (tag.get("HP") != null){
-            int itemHP = tag.getInt("HP");
-            tag.putInt("HP",itemHP + hp);
-            itemStack.set(DataComponents.CUSTOM_DATA,CustomData.of(tag));
+    public static void commonTreat(@NotNull ItemStack itemStack, int hp) {
+        ICard iCard = ICard.getICardOrNull(itemStack);
+        if (iCard != null) {
+            iCard.setHP(itemStack, iCard.getHP(itemStack) + hp);
         }
     }
 
@@ -83,12 +80,10 @@ public class CommonSummonOperation {
      * @param itemStack 目标召唤物
      * @param atk 增加的攻击力
      */
-    public static void commonAtkUp(@NotNull ItemStack itemStack , int atk){
-        CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
-        if (tag.get("ATK") != null){
-            int itemHP = tag.getInt("HP");
-            tag.putInt("ATK",itemHP + atk);
-            itemStack.set(DataComponents.CUSTOM_DATA,CustomData.of(tag));
+    public static void commonAtkUp(@NotNull ItemStack itemStack, int atk) {
+        ICard iCard = ICard.getICardOrNull(itemStack);
+        if (iCard != null) {
+            iCard.setATK(itemStack, iCard.getATK(itemStack) + atk);
         }
     }
 
@@ -97,17 +92,12 @@ public class CommonSummonOperation {
      * @param itemStack 目标召唤物
      * @param atk 减少的攻击力
      */
-    public static void commonAtkDown(@NotNull ItemStack itemStack , int atk){
-        CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
-        if (tag.get("ATK") != null){
-            int itemHP = tag.getInt("HP");
-            if ((itemHP - atk) < 1){
-                tag.putInt("ATK",CommonAtk);
-                itemStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-            }else {
-                tag.putInt("ATK", itemHP - atk);
-                itemStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-            }
+    public static void commonAtkDown(@NotNull ItemStack itemStack, int atk) {
+        ICard iCard = ICard.getICardOrNull(itemStack);
+        if (iCard != null) {
+            int currentAtk = iCard.getATK(itemStack);
+            int newAtk = Math.max(currentAtk - atk, CommonAtk);
+            iCard.setATK(itemStack, newAtk);
         }
     }
 

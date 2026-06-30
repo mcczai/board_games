@@ -69,4 +69,12 @@ public interface ICard {
     ResourceLocation getCardId(ItemStack card);
 
     void setCardId(ItemStack card,@Nullable ResourceLocation cardId);
+
+    /**
+     * 读取手中卡牌的种族标签
+     */
+    @Nullable
+    String getTribe(ItemStack Card);
+
+    void setTribe(ItemStack Card, String tribe);
 }
