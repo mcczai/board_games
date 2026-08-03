@@ -23,6 +23,9 @@ public class CardItemRenderer extends BlockEntityWithoutLevelRenderer {
     public static CardItemRenderer getInstance() {
         if (INSTANCE == null) {
             Minecraft mc = Minecraft.getInstance();
+            if (mc == null) {
+                throw new IllegalStateException("CardItemRenderer accessed before Minecraft is initialized");
+            }
             INSTANCE = new CardItemRenderer(mc.getBlockEntityRenderDispatcher(), mc.getEntityModels());
         }
         return INSTANCE;

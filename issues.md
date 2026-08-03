@@ -1,19 +1,19 @@
 # Card Duel Mod — 问题清单
 
-> 自动生成于代码审查 | 共 **33** 处问题（已修复 26 处）
+> 自动生成于代码审查 | 共 **27** 处问题（已修复 32 处）
 
 ---
 
-## 🔴 Critical (5) — 会导致崩溃/数据损坏/功能完全不可用
+## 🔴 Critical (0) — 已全部修复
 
 | # | 文件 | 行号 | 说明 |
 |---|------|------|------|
 | ~~1~~ | ~~`items/AbstractCardItem.java`~~ | ~~56-104~~ | ~~`fillItemTab` 的 `switch` 缺少 `break`，所有 case 穿透到底部 default，导致每张卡在创造标签页重复添加 5 次~~ |
-| 2 | `init/ModMenuType.java` + `CardduelMod.java` | 25-34 | `ModMenuType.MENUS` 定义了 `DeferredRegister` 但构造函数中未调用 `register(bus)`，菜单类型永远不会被注册 |
-| 3 | `items/inventory/CardBundleMenu.java` | 22 | `super(MenuType.HOPPER, containerId)` 硬编码使用原版漏斗菜单类型，应使用 `ModMenuType.CARD_BUNDLE_MENU.get()` |
-| 4 | `items/inventory/CardBundleMenu.java` | 14, 28-30 | `CONTAINER_SIZE=30` 但只添加了 5 个 slot，剩余 25 个不可见槽位可能导致物品丢失/复制/同步异常 |
-| 5 | `client/renderer/CardItemRenderer.java` | 23-29 | `getInstance()` 中 `Minecraft.getInstance()` 无空值检查；若在 Minecraft 实例初始化前调用会 NPE |
-| 6 | `skill/CommonSummonOperation.java` | 55 | `commonAttack` 中防御方 HP 从 `tag1`（攻击方）错误读取，应为 `tag2`（防御方），导致战斗伤害计算完全错误 |
+| ~~2~~ | ~~`init/ModMenuType.java` + `CardduelMod.java`~~ | ~~25-34~~ | ~~`ModMenuType.MENUS` 定义了 `DeferredRegister` 但构造函数中未调用 `register(bus)`，菜单类型永远不会被注册~~ |
+| ~~3~~ | ~~`items/inventory/CardBundleMenu.java`~~ | ~~22~~ | ~~`super(MenuType.HOPPER, containerId)` 硬编码使用原版漏斗菜单类型，应使用 `ModMenuType.CARD_BUNDLE_MENU.get()`~~ |
+| ~~4~~ | ~~`items/inventory/CardBundleMenu.java`~~ | ~~14, 28-30~~ | ~~`CONTAINER_SIZE=30` 但只添加了 5 个 slot，剩余 25 个不可见槽位可能导致物品丢失/复制/同步异常~~ |
+| ~~5~~ | ~~`client/renderer/CardItemRenderer.java`~~ | ~~23-29~~ | ~~`getInstance()` 中 `Minecraft.getInstance()` 无空值检查；若在 Minecraft 实例初始化前调用会 NPE~~ |
+| ~~6~~ | ~~`skill/CommonSummonOperation.java`~~ | ~~55~~ | ~~`commonAttack` 中防御方 HP 从 `tag1`（攻击方）错误读取，应为 `tag2`（防御方），导致战斗伤害计算完全错误~~ |
 
 ---
 
@@ -26,7 +26,7 @@
 | 9 | `items/CardBundleItem.java` | 62-69 | `use()` 的服务端分支为空，无打开菜单逻辑 → 右键卡包无法打开 GUI |
 | 10 | `client/resource/loader/asset/TextureLoader.java` | 35 | `new ZipPackTexture(id, zipFile.getName())` 只传文件名而非完整路径，ZIP 内纹理加载会 `FileNotFoundException` |
 | 11 | `client/gui/screens/inventory/CardBundleScreen.java` | 17 | GUI 引用的 `textures/gui/container/card_bundle.png` 纹理文件不存在，渲染为紫色/黑色棋盘格 |
-| 12 | `client/resource/ClientCardPackLoader.java` | 100 | 对每个 ZIP 条目无条件调用 `PackInfoLoader.load()`（已在 94 行处理过），冗余无效代码 |
+| ~~12~~ | ~~`client/resource/ClientCardPackLoader.java`~~ | ~~100~~ | ~~对每个 ZIP 条目无条件调用 `PackInfoLoader.load()`（已在 94 行处理过），冗余无效代码~~ |
 | 13 | `resources/CommonCardPackLoader.java` | 29 | `new ResourceLocation.Serializer()` — Minecraft 1.20.5+ 已移除 `ResourceLocation.Serializer` 内部类，**编译错误** |
 | 14 | `client/resource/serialize/ItemStackSerializer.java` | 32 | `ResourceLocation.tryBySeparator(itemName, ':')` — MC 1.21 中应为 `ResourceLocation.tryParse()`，**编译错误** |
 | 15 | `block/DuelTableBlock.java` | 39-55 | 双重桌放置逻辑要求点击位置和相邻位置均已存在方块 → `DOUBLE=true` 实际上永远无法通过正常放置达成 |
@@ -96,15 +96,15 @@
 
 | 严重程度 | 数量 |
 |----------|------|
-| 🔴 Critical | 5 |
-| 🟠 Major | 10 |
+| 🔴 Critical | 0 |
+| 🟠 Major | 9 |
 | 🟡 Minor | 18 |
-| **总计** | **33** |
+| **总计** | **27** |
 
 | 类别 | 数量 |
 |------|------|
-| Bug | 10 |
+| Bug | 5 |
 | DeadCode | 15 |
-| Architecture | 5 |
+| Architecture | 4 |
 | Compilation | 1 |
 | CodeStyle/Other | 7 |

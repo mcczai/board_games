@@ -2,17 +2,14 @@ package net.mcczai.cardduel;
 
 import net.mcczai.cardduel.API.resource.ResourceManager;
 import net.mcczai.cardduel.config.CommonConfig;
-import net.mcczai.cardduel.init.ModBlockEntities;
-import net.mcczai.cardduel.init.ModBlocks;
-import net.mcczai.cardduel.init.ModDataComponents;
-import net.mcczai.cardduel.init.ModItem;
+import net.mcczai.cardduel.init.*;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-// TODO: 记得看bug.md里的归档！！！！！！！！
+// TODO: 记得看md里的归档！！！！！！！！
 @Mod(CardduelMod.MODID)
 public class CardduelMod {
 
@@ -30,6 +27,7 @@ public class CardduelMod {
         ModBlockEntities.BLOCK_ENTITIES.register(bus);
         ModDataComponents.DATA_COMPONENTS.register(bus);
         CardduelCreativeTab.CARDDUEL_TABS.register(bus);
+        ModMenuType.MENUS.register(bus);
 
         registerDefaultExtraCardPack();
     }

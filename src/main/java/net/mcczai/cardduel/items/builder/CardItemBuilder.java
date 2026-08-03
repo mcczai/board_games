@@ -27,11 +27,6 @@ public final class CardItemBuilder {
         return new CardItemBuilder();
     }
 
-    public CardItemBuilder setCount(int count){
-        this.count = Math.max(count,1);
-        return this;
-    }
-
     public CardItemBuilder setHP(int hp){
         this.hp = Math.max(hp,1);
         return this;

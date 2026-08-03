@@ -1,27 +1,27 @@
 package net.mcczai.cardduel.items.inventory;
 
+import net.mcczai.cardduel.init.ModMenuType;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public class CardBundleMenu extends AbstractContainerMenu {
-    public static final int CONTAINER_SIZE = 30;
+    public static final int CONTAINER_SIZE = 5;
     private final Container cardBundle;
 
     public CardBundleMenu(int containerId, Inventory playerInventory) {
-        this(containerId, playerInventory, new SimpleContainer(30));
+        this(containerId, playerInventory, new SimpleContainer(CONTAINER_SIZE));
     }
 
     public CardBundleMenu(int containerId, Inventory playerInventory, Container container) {
-        super(MenuType.HOPPER, containerId);
+        super(ModMenuType.CARD_BUNDLE_MENU.get(), containerId);
         this.cardBundle = container;
-        checkContainerSize(container, 30);
+        checkContainerSize(container, CONTAINER_SIZE);
         container.startOpen(playerInventory.player);
         int i = 51;
 
