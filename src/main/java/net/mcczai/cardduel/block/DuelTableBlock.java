@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -37,22 +38,40 @@ public class DuelTableBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public BlockState getStateForPlacement(@NotNull BlockPlaceContext context) {
-        Direction direction = context.getHorizontalDirection();
         BlockGetter blockGetter = context.getLevel();
         BlockPos blockPos = context.getClickedPos();
-        BlockPos blockPos1 = blockPos.relative(direction);
-        BlockState blockState = blockGetter.getBlockState(blockPos);
-        BlockState blockState1 = blockGetter.getBlockState(blockPos1);
-            if (blockState.getBlock() == ModBlocks.DUELTABLE_BLOCK.get() && blockState1.getBlock() == ModBlocks.DUELTABLE_BLOCK.get()) {
-                return this.defaultBlockState()
-                        .setValue(DOUBLE, true)
-                        .setValue(FACING, context.getHorizontalDirection());
+        BlockState northState = blockGetter.getBlockState(blockPos.relative(Direction.NORTH));
+        BlockState southState = blockGetter.getBlockState(blockPos.relative(Direction.SOUTH));
+        if (northState.is(ModBlocks.DUELTABLE_BLOCK.get())) {
+            return this.defaultBlockState()
+                    .setValue(FACING, Direction.NORTH)
+                    .setValue(DOUBLE, true);
+        }
+        if (southState.is(ModBlocks.DUELTABLE_BLOCK.get())) {
+            return this.defaultBlockState()
+                    .setValue(FACING, Direction.SOUTH)
+                    .setValue(DOUBLE, true);
+        }
+        return this.defaultBlockState()
+                .setValue(FACING, Direction.NORTH)
+                .setValue(DOUBLE, false);
+    }
 
-            } else {
-                return this.defaultBlockState()
-                        .setValue(DOUBLE, false)
-                        .setValue(FACING, context.getHorizontalDirection());
-            }
+    @Override
+    protected @NotNull BlockState updateShape(@NotNull BlockState state, @NotNull Direction direction,
+                                              @NotNull BlockState neighborState, @NotNull LevelAccessor level,
+                                              @NotNull BlockPos pos, @NotNull BlockPos neighborPos) {
+        BlockState northState = level.getBlockState(pos.relative(Direction.NORTH));
+        BlockState southState = level.getBlockState(pos.relative(Direction.SOUTH));
+        boolean northTable = northState.is(ModBlocks.DUELTABLE_BLOCK.get());
+        boolean southTable = southState.is(ModBlocks.DUELTABLE_BLOCK.get());
+        if (northTable && !southTable) {
+            return state.setValue(FACING, Direction.NORTH).setValue(DOUBLE, true);
+        }
+        if (southTable && !northTable) {
+            return state.setValue(FACING, Direction.SOUTH).setValue(DOUBLE, true);
+        }
+        return state.setValue(FACING, Direction.NORTH).setValue(DOUBLE, false);
     }
 
     @Override

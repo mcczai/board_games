@@ -1,6 +1,6 @@
 # Card Duel Mod — 问题清单
 
-> 自动生成于代码审查 | 共 **12** 处问题（已修复 **45** 处）
+> 自动生成于代码审查 | 共 **11** 处问题（已修复 **46** 处）
 
 ---
 
@@ -29,7 +29,7 @@
 | ~~12~~ | ~~`client/resource/ClientCardPackLoader.java`~~                          | ~~100~~   | ~~对每个 ZIP 条目无条件调用 `PackInfoLoader.load()`（已在 94 行处理过），冗余无效代码~~                                                                                     |
 | ~~13~~ | ~~`resources/CommonCardPackLoader.java`~~ | ~~29~~ | ~~`new ResourceLocation.Serializer()` — Minecraft 1.20.5+ 已移除 `ResourceLocation.Serializer` 内部类，**编译错误**~~ |
 | ~~14~~ | ~~`client/resource/serialize/ItemStackSerializer.java`~~ | ~~32~~ | ~~`ResourceLocation.tryBySeparator(itemName, ':')` — MC 1.21 中应为 `ResourceLocation.tryParse()`，**编译错误**~~ |
-| 15     | `block/DuelTableBlock.java`                                              | 39-55     | 双重桌放置逻辑要求点击位置和相邻位置均已存在方块 → `DOUBLE=true` 实际上永远无法通过正常放置达成                                                                                           |
+| ~~15~~ | ~~`block/DuelTableBlock.java`~~                                              | ~~39-55~~     | ~~双重桌放置逻辑要求点击位置和相邻位置均已存在方块 → `DOUBLE=true` 实际上永远无法通过正常放置达成~~                                                                                           |
 | ~~16~~ | ~~`init/ModDataComponents.java` 与 `API/item/nbt/CardDataAccessor.java`~~ | ~~-~~     | ~~注册了 HP/ATK/MP/Type/Skill/CardId 等 DataComponent，但 `CardDataAccessor` 全部通过 `CUSTOM_DATA`（原始 NBT）读写，注册的组件从未被使用（仅 `CARD_ID` 和 `CARD_BUNDLE` 实际在用）~~ |
 | 17     | `CardduelCreativeTab.java`                                               | 19        | 标签页 ID `"tarp_tab"` 拼写错误，应为 `"trap"`。`en_us.json`、`zh_cn.json` 中翻译键也全部写错                                                                           |
 
@@ -97,9 +97,9 @@
 | 严重程度 | 数量     |
 |----------|--------|
 | 🔴 Critical | 0      |
-| 🟠 Major | 2      |
+| 🟠 Major | 1      |
 | 🟡 Minor | 10     |
-| **总计** | **12** |
+| **总计** | **11** |
 
 | 类别 | 数量 |
 |------|------|
