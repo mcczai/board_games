@@ -3,6 +3,8 @@ package net.mcczai.cardduel.resources;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonParseException;
 import net.mcczai.cardduel.API.resource.ResourceManager;
 import net.mcczai.cardduel.CardduelMod;
 import net.mcczai.cardduel.config.common.OtherConfig;
@@ -24,7 +26,13 @@ import java.util.Set;
 
 public class CommonCardPackLoader {
     public static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(ResourceLocation.class, new ResourceLocation.Serializer())
+            .registerTypeAdapter(ResourceLocation.class, (JsonDeserializer<ResourceLocation>) (json, typeOfT, context) -> {
+                try {
+                    return ResourceLocation.parse(json.getAsString());
+                } catch (RuntimeException e) {
+                    throw new JsonParseException("Invalid ResourceLocation: " + json, e);
+                }
+            })
             .create();
 
     public static final Path FOLDER = Paths.get("config", CardduelMod.MODID, "custom");

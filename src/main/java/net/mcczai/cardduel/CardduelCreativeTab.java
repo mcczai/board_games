@@ -21,7 +21,7 @@ public class CardduelCreativeTab {
             .withTabsBefore(CreativeModeTabs.COMBAT)
             .icon(() -> ModItem.DUELTABLE_BLOCK_ITEM.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
-                output.accept(ModItem.CARD_BUNDLE_ITEM);
+                output.accept(ModItem.CARD_BAG_ITEM);
                 output.accept(ModItem.DUELTABLE_BLOCK_ITEM);
                 output.acceptAll(AbstractCardItem.fillItemTab(CardTabType.TRAP));
             }).build());

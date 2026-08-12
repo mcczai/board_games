@@ -72,7 +72,7 @@ public class ClientCardPackLoader {
             if (PackInfoLoader.load(ctx.zipFile(), ctx.path())) {
                 return;
             }
-            TextureLoader.load(ctx.zipFile(), ctx.path());
+            TextureLoader.load(ctx.zipFile(), ctx.zipFileRef(), ctx.path());
         });
     }
 

@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "cardduel:item/card_bundle"
+    "layer0": "cardduel:item/card_bag"
   }
 }

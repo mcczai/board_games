@@ -92,4 +92,12 @@ public interface CardDataAccessor extends ICard {
         CardDataComponent data = getOrCreateCardData(card);
         card.set(ModDataComponents.CARD_DATA, data.withTribe(tribe));
     }
+
+    default boolean isInDuel(@NotNull ItemStack card) {
+        return card.getOrDefault(ModDataComponents.IN_DUEL, false);
+    }
+
+    default void setInDuel(@NotNull ItemStack card, boolean inDuel) {
+        card.set(ModDataComponents.IN_DUEL, inDuel);
+    }
 }

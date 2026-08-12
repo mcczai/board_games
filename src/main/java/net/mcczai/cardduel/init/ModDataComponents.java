@@ -1,8 +1,9 @@
 package net.mcczai.cardduel.init;
 
+import com.mojang.serialization.Codec;
 import net.mcczai.cardduel.CardduelMod;
 import net.mcczai.cardduel.items.component.CardDataComponent;
-import net.mcczai.cardduel.items.inventory.CardBundleContents;
+import net.mcczai.cardduel.items.inventory.CardBagContents;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.resources.ResourceLocation;
@@ -23,9 +24,14 @@ public class ModDataComponents {
             builder -> builder.persistent(ResourceLocation.CODEC).networkSynchronized(ByteBufCodecs.STRING_UTF8.map(ResourceLocation::parse, ResourceLocation::toString))
     );
 
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<CardBundleContents>> CARD_BUNDLE = DATA_COMPONENTS.registerComponentType(
-            "card_bundle",
-            listBuilder -> listBuilder.persistent(CardBundleContents.CODEC).networkSynchronized(CardBundleContents.STREAM_CODEC)
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<CardBagContents>> CARD_BAG = DATA_COMPONENTS.registerComponentType(
+            "card_bag",
+            listBuilder -> listBuilder.persistent(CardBagContents.CODEC).networkSynchronized(CardBagContents.STREAM_CODEC)
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> IN_DUEL = DATA_COMPONENTS.registerComponentType(
+            "in_duel",
+            builder -> builder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL)
     );
 
 }

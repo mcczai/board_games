@@ -2,7 +2,6 @@ package net.mcczai.cardduel.items;
 
 import net.mcczai.cardduel.API.CdAPI;
 import net.mcczai.cardduel.API.item.CardTabType;
-import net.mcczai.cardduel.client.resource.ClientCardIndex;
 import net.mcczai.cardduel.items.builder.CardItemBuilder;
 import net.mcczai.cardduel.resources.CommonCardIndex;
 import net.mcczai.cardduel.resources.pojo.CardDataPOJO;
@@ -13,6 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Comparator;
@@ -34,9 +34,13 @@ public abstract class AbstractCardItem extends Item implements ICard {
     @Override
     public @NotNull Component getName(@NotNull ItemStack stack) {
         ResourceLocation cardId = this.getCardId(stack);
-        Optional<ClientCardIndex> cardIndex = CdAPI.getClientCardIndex(cardId);
+        Optional<CommonCardIndex> cardIndex = CdAPI.getCommonCardIndex(cardId);
         if (cardIndex.isPresent()){
-            return Component.translatable(cardIndex.get().getName());
+            String name = cardIndex.get().getPojo().getName();
+            if (StringUtils.isBlank(name)){
+                name = "custom.cardduel.err.no_name";
+            }
+            return Component.translatable(name);
         }
         return super.getName(stack);
     }

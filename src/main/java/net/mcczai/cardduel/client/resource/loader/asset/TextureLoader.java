@@ -21,7 +21,7 @@ public class TextureLoader {
     private static final Marker MARKER = MarkerManager.getMarker("TextureLoader");
     private static final Pattern TEXTURE_PATTERN = Pattern.compile("^(\\w+)/textures/([\\w/]+)\\.png$");
 
-    public static boolean load(ZipFile zipFile, String zipPath) {
+    public static boolean load(ZipFile zipFile, File zipFileRef, String zipPath) {
         Matcher matcher = TEXTURE_PATTERN.matcher(zipPath);
         if (matcher.find()) {
             String namespace = matcher.group(1);
@@ -32,7 +32,7 @@ public class TextureLoader {
                 return false;
             }
             ResourceLocation id = ResourceLocation.fromNamespaceAndPath(namespace, path);
-            ZipPackTexture zipPackTexture = new ZipPackTexture(id, zipFile.getName());
+            ZipPackTexture zipPackTexture = new ZipPackTexture(id, zipFileRef.getAbsolutePath());
             Minecraft.getInstance().getTextureManager().register(id, zipPackTexture);
             return true;
         }

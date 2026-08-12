@@ -35,6 +35,7 @@ public class ClientCardIndex {
     private static void CheckIndex(@NotNull CardIndexPOJO cardIndexPOJO, @NotNull ClientCardIndex index){
         Preconditions.checkArgument(cardIndexPOJO != null,"index object file is empty");
         Preconditions.checkArgument(StringUtils.isNoneBlank(cardIndexPOJO.getType()), "index object missing type field");
+        index.pojo = cardIndexPOJO;
         index.type = cardIndexPOJO.getType();
         index.texture = cardIndexPOJO.getTexture();
     }

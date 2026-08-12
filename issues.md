@@ -1,6 +1,6 @@
 # Card Duel Mod — 问题清单
 
-> 自动生成于代码审查 | 共 **27** 处问题（已修复 32 处）
+> 自动生成于代码审查 | 共 **12** 处问题（已修复 **45** 处）
 
 ---
 
@@ -17,21 +17,21 @@
 
 ---
 
-## 🟠 Major (10) — 显著运行时 Bug / 逻辑错误 / 架构问题
+## 🟠 Major (7) — 显著运行时 Bug / 逻辑错误 / 架构问题
 
-| # | 文件 | 行号 | 说明 |
-|---|------|------|------|
-| 7 | `client/resource/ClientCardIndex.java` | 76-78 | `getInstance()` 未设置 `pojo` 字段，`getPojo()` 始终返回 null → `ClientCardTooltip.getText()` 会 NPE |
-| 8 | `items/AbstractCardItem.java` | 36-43 | `getName()` 调用了 `@OnlyIn(Dist.CLIENT)` 标注的 `CdAPI.getClientCardIndex()`；在专用服务端会崩溃 |
-| 9 | `items/CardBundleItem.java` | 62-69 | `use()` 的服务端分支为空，无打开菜单逻辑 → 右键卡包无法打开 GUI |
-| 10 | `client/resource/loader/asset/TextureLoader.java` | 35 | `new ZipPackTexture(id, zipFile.getName())` 只传文件名而非完整路径，ZIP 内纹理加载会 `FileNotFoundException` |
-| 11 | `client/gui/screens/inventory/CardBundleScreen.java` | 17 | GUI 引用的 `textures/gui/container/card_bundle.png` 纹理文件不存在，渲染为紫色/黑色棋盘格 |
-| ~~12~~ | ~~`client/resource/ClientCardPackLoader.java`~~ | ~~100~~ | ~~对每个 ZIP 条目无条件调用 `PackInfoLoader.load()`（已在 94 行处理过），冗余无效代码~~ |
-| 13 | `resources/CommonCardPackLoader.java` | 29 | `new ResourceLocation.Serializer()` — Minecraft 1.20.5+ 已移除 `ResourceLocation.Serializer` 内部类，**编译错误** |
-| 14 | `client/resource/serialize/ItemStackSerializer.java` | 32 | `ResourceLocation.tryBySeparator(itemName, ':')` — MC 1.21 中应为 `ResourceLocation.tryParse()`，**编译错误** |
-| 15 | `block/DuelTableBlock.java` | 39-55 | 双重桌放置逻辑要求点击位置和相邻位置均已存在方块 → `DOUBLE=true` 实际上永远无法通过正常放置达成 |
-| ~~16~~ | ~~`init/ModDataComponents.java` 与 `API/item/nbt/CardDataAccessor.java`~~ | ~~-~~ | ~~注册了 HP/ATK/MP/Type/Skill/CardId 等 DataComponent，但 `CardDataAccessor` 全部通过 `CUSTOM_DATA`（原始 NBT）读写，注册的组件从未被使用（仅 `CARD_ID` 和 `CARD_BUNDLE` 实际在用）~~ |
-| 17 | `CardduelCreativeTab.java` | 19 | 标签页 ID `"tarp_tab"` 拼写错误，应为 `"trap"`。`en_us.json`、`zh_cn.json` 中翻译键也全部写错 |
+| #      | 文件                                                                       | 行号        | 说明                                                                                                                                                 |
+|--------|--------------------------------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| ~~7~~  | ~~`client/resource/ClientCardIndex.java`~~                               | ~~76-78~~ | ~~`getInstance()` 未设置 `pojo` 字段，`getPojo()` 始终返回 null → `ClientCardTooltip.getText()` 会 NPE~~                                                      |
+| ~~8~~ | ~~`items/AbstractCardItem.java`~~ | ~~36-43~~ | ~~`getName()` 调用了 `@OnlyIn(Dist.CLIENT)` 标注的 `CdAPI.getClientCardIndex()`；在专用服务端会崩溃~~ |
+| ~~9~~ | ~~`items/CardBundleItem.java`~~ | ~~62-69~~ | ~~`use()` 的服务端分支为空，无打开菜单逻辑 → 右键卡包无法打开 GUI~~ |
+| ~~10~~ | ~~`client/resource/loader/asset/TextureLoader.java`~~ | ~~35~~ | ~~`new ZipPackTexture(id, zipFile.getName())` 只传文件名而非完整路径，ZIP 内纹理加载会 `FileNotFoundException`~~ |
+| ~~11~~ | ~~`client/gui/screens/inventory/CardBundleScreen.java`~~ | ~~17~~ | ~~GUI 引用的 `textures/gui/container/card_bundle.png` 纹理文件不存在，渲染为紫色/黑色棋盘格~~ |
+| ~~12~~ | ~~`client/resource/ClientCardPackLoader.java`~~                          | ~~100~~   | ~~对每个 ZIP 条目无条件调用 `PackInfoLoader.load()`（已在 94 行处理过），冗余无效代码~~                                                                                     |
+| ~~13~~ | ~~`resources/CommonCardPackLoader.java`~~ | ~~29~~ | ~~`new ResourceLocation.Serializer()` — Minecraft 1.20.5+ 已移除 `ResourceLocation.Serializer` 内部类，**编译错误**~~ |
+| ~~14~~ | ~~`client/resource/serialize/ItemStackSerializer.java`~~ | ~~32~~ | ~~`ResourceLocation.tryBySeparator(itemName, ':')` — MC 1.21 中应为 `ResourceLocation.tryParse()`，**编译错误**~~ |
+| 15     | `block/DuelTableBlock.java`                                              | 39-55     | 双重桌放置逻辑要求点击位置和相邻位置均已存在方块 → `DOUBLE=true` 实际上永远无法通过正常放置达成                                                                                           |
+| ~~16~~ | ~~`init/ModDataComponents.java` 与 `API/item/nbt/CardDataAccessor.java`~~ | ~~-~~     | ~~注册了 HP/ATK/MP/Type/Skill/CardId 等 DataComponent，但 `CardDataAccessor` 全部通过 `CUSTOM_DATA`（原始 NBT）读写，注册的组件从未被使用（仅 `CARD_ID` 和 `CARD_BUNDLE` 实际在用）~~ |
+| 17     | `CardduelCreativeTab.java`                                               | 19        | 标签页 ID `"tarp_tab"` 拼写错误，应为 `"trap"`。`en_us.json`、`zh_cn.json` 中翻译键也全部写错                                                                           |
 
 ---
 
@@ -57,15 +57,15 @@
 | 28 | `items/CardItemManager.java` | 整类因事件未触发成为死代码（Map 从未被填充） |
 | 29 | `CardduelCreativeTab.java:29-51` | 23 行被注释的 MANA/EQUIP/SUMMON 标签页代码 |
 | ~~30~~ | ~~`block/blockstate/DuelTableType.java`~~ | ~~枚举完全未被任何代码引用~~ |
-| 31 | `block/entity/DuelTableBlockEntity.java` | 方块实体无任何自定义逻辑（无 NBT 保存/加载、无 tick、无数据存储） |
+| ~~31~~ | ~~`block/entity/DuelTableBlockEntity.java`~~ | ~~方块实体无任何自定义逻辑（无 NBT 保存/加载、无 tick、无数据存储）~~ |
 | ~~32~~ | ~~`player/getPlayerSight.java`~~ | ~~类名小写开头违反 Java 规范 + `getPlayerLookBlockDirection()` 始终返回 false + 公共字段 `Pix` 未被引用~~ |
 | ~~33~~ | ~~`util/SkillHandler.java`~~ | ~~完全空类~~ |
-| 34 | `items/inventory/BaseCardBundleItem.java` | 空壳子类，从未被使用 |
-| 35 | `items/component/CardDataComponent.java` | Record 类（Codec + 字段），从未被导入或使用 |
-| 36 | `items/component/ItemStackWrapper.java` | 包装类（Codec + StreamCodec），从未被使用 |
-| 37 | `items/component/Slots.java` | Record 类（Codec + StreamCodec），从未被使用 |
-| 38 | `network/IMessage.java` | 网络接口（encode/decode/handle），无人实现 |
-| 39 | `network/SerialPacketBase.java` | 空接口 `{}`，无人实现 |
+| ~~34~~ | ~~`items/inventory/BaseCardBundleItem.java`~~ | ~~空壳子类，从未被使用~~ |
+| ~~35~~ | ~~`items/component/CardDataComponent.java`~~ | ~~Record 类（Codec + 字段），从未被导入或使用~~ |
+| ~~36~~ | ~~`items/component/ItemStackWrapper.java`~~ | ~~包装类（Codec + StreamCodec），从未被使用~~ |
+| ~~37~~ | ~~`items/component/Slots.java`~~ | ~~Record 类（Codec + StreamCodec），从未被使用~~ |
+| ~~38~~ | ~~`network/IMessage.java`~~ | ~~网络接口（encode/decode/handle），无人实现~~ |
+| ~~39~~ | ~~`network/SerialPacketBase.java`~~ | ~~空接口 `{}`，无人实现~~ |
 | 40 | `util/GetJarResources.java:64-66` | `copyModDirectory(String, Path, String)` 重载从未被调用 |
 | ~~41~~ | ~~`items/CardBundleItem.java:80-82`~~ | ~~`playDropContentsSound()` 定义但从未调用~~ |
 | ~~42~~ | ~~`items/CardBundleItem.java:18`~~ | ~~`MAX_ROW = 5` 字段从未被引用~~ |
@@ -94,12 +94,12 @@
 
 ## 📊 统计
 
-| 严重程度 | 数量 |
-|----------|------|
-| 🔴 Critical | 0 |
-| 🟠 Major | 9 |
-| 🟡 Minor | 18 |
-| **总计** | **27** |
+| 严重程度 | 数量     |
+|----------|--------|
+| 🔴 Critical | 0      |
+| 🟠 Major | 2      |
+| 🟡 Minor | 10     |
+| **总计** | **12** |
 
 | 类别 | 数量 |
 |------|------|

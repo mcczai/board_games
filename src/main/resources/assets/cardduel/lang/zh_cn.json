@@ -6,7 +6,11 @@
 
   "block.cardduel.dueltable_block": "对战桌",
 
-  "item.cardduel.card_bundle": "卡牌袋",
+  "item.cardduel.card_bag": "卡牌袋",
+
+  "cardduel.bag.not_enough": "卡牌不足：袋内需满 27 张才能准备",
+  "cardduel.bag.ready": "已准备",
+  "cardduel.bag.cancel_ready": "已取消准备，牌组已清空",
 
   "cardduel.tribe.ender": "末影",
   "cardduel.tribe.nature": "自然",

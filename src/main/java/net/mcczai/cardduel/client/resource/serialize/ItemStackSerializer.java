@@ -29,8 +29,8 @@ public class ItemStackSerializer implements JsonDeserializer<ItemStack> {
 
     public static Item getItem(String itemName, boolean disallowsAirInRecipe)
     {
-        ResourceLocation itemKey =  ResourceLocation.tryBySeparator(itemName,':');
-        if (!BuiltInRegistries.ITEM.containsKey(itemKey))
+        ResourceLocation itemKey = ResourceLocation.tryParse(itemName);
+        if (itemKey == null || !BuiltInRegistries.ITEM.containsKey(itemKey))
             throw new JsonSyntaxException("Unknown item '" + itemName + "'");
 
         Item item = BuiltInRegistries.ITEM.get(itemKey);

@@ -1,7 +1,7 @@
 package net.mcczai.cardduel.client.gui.screens.inventory;
 
 import net.mcczai.cardduel.CardduelMod;
-import net.mcczai.cardduel.items.inventory.CardBundleMenu;
+import net.mcczai.cardduel.items.inventory.CardBagMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -12,13 +12,13 @@ import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
 @OnlyIn(Dist.CLIENT)
-public class CardBundleScreen extends AbstractContainerScreen<CardBundleMenu> {
+public class CardBagScreen extends AbstractContainerScreen<CardBagMenu> {
 
-    private static final ResourceLocation CARD_BUNDLE_LOCATION = ResourceLocation.fromNamespaceAndPath( CardduelMod.MODID, "textures/gui/container/card_bundle.png");
+    private static final ResourceLocation CARD_BAG_LOCATION = ResourceLocation.fromNamespaceAndPath(CardduelMod.MODID, "textures/gui/container/card_bag.png");
 
-    public CardBundleScreen(CardBundleMenu menu, Inventory playerInventory, Component title) {
+    public CardBagScreen(CardBagMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageHeight = 133;
+        this.imageHeight = 178;
         this.inventoryLabelY = this.imageHeight - 94;
     }
 
@@ -29,9 +29,9 @@ public class CardBundleScreen extends AbstractContainerScreen<CardBundleMenu> {
     }
 
     @Override
-    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int  mouseX, int  mouseY) {
+    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         int i = (this.width - this.imageWidth) / 2;
         int j = (this.height - this.imageHeight) / 2;
-        guiGraphics.blit(CARD_BUNDLE_LOCATION, i, j, 0, 0, this.imageWidth, this.imageHeight);
+        guiGraphics.blit(CARD_BAG_LOCATION, i, j, 0, 0, this.imageWidth, this.imageHeight, this.imageWidth, this.imageHeight);
     }
 }

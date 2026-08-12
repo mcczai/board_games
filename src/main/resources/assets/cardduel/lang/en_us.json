@@ -6,7 +6,11 @@
 
   "block.cardduel.dueltable_block": "Duel Table",
 
-  "item.cardduel.card_bundle": "Card Bundle",
+  "item.cardduel.card_bag": "Card Bag",
+
+  "cardduel.bag.not_enough": "Not enough cards: need 27 cards in the bag to ready up",
+  "cardduel.bag.ready": "Ready!",
+  "cardduel.bag.cancel_ready": "Ready cancelled, deck cleared",
 
   "cardduel.tribe.ender": "Ender",
   "cardduel.tribe.nature": "Nature",
