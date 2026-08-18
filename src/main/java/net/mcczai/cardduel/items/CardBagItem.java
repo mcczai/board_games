@@ -56,18 +56,22 @@ public class CardBagItem extends Item {
 
         if (player.isCrouching()) {
             if (!level.isClientSide) {
-                table.clearDeck();
+                table.cancelDeck(player);
                 player.displayClientMessage(Component.translatable("cardduel.bag.cancel_ready"), true);
             }
             return InteractionResult.sidedSuccess(level.isClientSide());
         }
 
         if (!level.isClientSide) {
+            if (table.getDataFor(player) == null) {
+                player.displayClientMessage(Component.translatable("cardduel.bag.not_seated"), true);
+                return InteractionResult.sidedSuccess(false);
+            }
             CardBagContents contents = context.getItemInHand().getOrDefault(ModDataComponents.CARD_BAG, CardBagContents.EMPTY);
             if (contents.size() < CardBagContents.MAX_SIZE) {
                 player.displayClientMessage(Component.translatable("cardduel.bag.not_enough"), true);
             } else {
-                table.setDeck(contents.items());
+                table.submitDeck(player, contents.items());
                 player.displayClientMessage(Component.translatable("cardduel.bag.ready"), true);
             }
         }

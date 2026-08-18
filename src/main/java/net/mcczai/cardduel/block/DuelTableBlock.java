@@ -2,11 +2,16 @@ package net.mcczai.cardduel.block;
 
 import com.mojang.serialization.MapCodec;
 import net.mcczai.cardduel.block.entity.DuelTableBlockEntity;
+import net.mcczai.cardduel.duel.DuelEngine;
 import net.mcczai.cardduel.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -14,6 +19,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -77,6 +83,23 @@ public class DuelTableBlock extends BaseEntityBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.@NotNull Builder<Block, BlockState> builder) {
         builder.add(FACING,DOUBLE);
+    }
+
+    @Override
+    protected @NotNull InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level,
+                                                        @NotNull BlockPos pos, @NotNull Player player,
+                                                        @NotNull BlockHitResult hitResult) {
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+        if (player instanceof ServerPlayer serverPlayer
+                && level.getBlockEntity(pos) instanceof DuelTableBlockEntity table) {
+            if (player.isShiftKeyDown()) {
+                return DuelEngine.handleLeave(serverPlayer, table);
+            }
+            return DuelEngine.handleTableUse(serverPlayer, table);
+        }
+        return InteractionResult.PASS;
     }
 
     @Override
