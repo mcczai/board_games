@@ -56,8 +56,11 @@ public class CardBagItem extends Item {
 
         if (player.isCrouching()) {
             if (!level.isClientSide) {
-                table.cancelDeck(player);
-                player.displayClientMessage(Component.translatable("cardduel.bag.cancel_ready"), true);
+                // 仅在已入座时取消准备并提示，避免旁观玩家刷屏
+                if (table.getDataFor(player) != null) {
+                    table.cancelDeck(player);
+                    player.displayClientMessage(Component.translatable("cardduel.bag.cancel_ready"), true);
+                }
             }
             return InteractionResult.sidedSuccess(level.isClientSide());
         }

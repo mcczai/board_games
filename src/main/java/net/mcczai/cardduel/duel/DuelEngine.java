@@ -74,6 +74,15 @@ public final class DuelEngine {
      * 对局进行中（MULLIGAN/PLAYING）不允许离座。
      */
     public static InteractionResult handleLeave(ServerPlayer player, DuelTableBlockEntity table) {
+        if (!table.isHost(player) && !table.isGuest(player)) {
+            // 未在本桌入座：静默返回，避免"已离座"刷屏；
+            // 仅在玩家坐于其他牌桌时给出一次提示
+            if (player.getData(ModAttachments.DUEL_SEAT.get()) != null) {
+                player.displayClientMessage(Component.translatable("cardduel.duel.already_seated"), false);
+            }
+            return InteractionResult.SUCCESS;
+        }
+
         DuelPhase phase = table.getPhase();
         if (phase == DuelPhase.MULLIGAN || phase == DuelPhase.PLAYING) {
             player.displayClientMessage(Component.translatable("cardduel.duel.cant_leave"), false);
