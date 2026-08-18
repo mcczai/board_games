@@ -2,6 +2,7 @@ package net.mcczai.cardduel.duel;
 
 import net.mcczai.cardduel.block.entity.DuelTableBlockEntity;
 import net.mcczai.cardduel.init.ModAttachments;
+import net.mcczai.cardduel.network.payload.ClientboundDuelHandPayload;
 import net.mcczai.cardduel.network.payload.ClientboundDuelSyncPayload;
 import net.mcczai.cardduel.network.payload.ClientboundOpenSetupPayload;
 import net.mcczai.cardduel.skill.SkillHooks;
@@ -107,6 +108,7 @@ public final class DuelEngine {
 
         player.removeData(ModAttachments.DUEL_SEAT.get());
         player.displayClientMessage(Component.translatable("cardduel.duel.leave_ok"), false);
+        syncToPlayers(table);
         return InteractionResult.SUCCESS;
     }
 
@@ -301,7 +303,7 @@ public final class DuelEngine {
     // ==================== 同步与工具 ====================
 
     /**
-     * 把对局公开状态推送给双方玩家（P1-2 HUD 消费）。
+     * 把对局公开状态推送给双方玩家（P1-2 HUD 消费），并把各自的手牌定向发给本人。
      */
     public static void syncToPlayers(DuelTableBlockEntity table) {
         if (!(table.getLevel() instanceof ServerLevel serverLevel)) {
@@ -309,13 +311,16 @@ public final class DuelEngine {
         }
         ClientboundDuelSyncPayload payload = ClientboundDuelSyncPayload.of(table);
         UUID[] uuids = {table.getHostUuid(), table.getGuestUuid()};
-        for (UUID uuid : uuids) {
+        DuelPlayerData[] datas = {table.getHostData(), table.getGuestData()};
+        for (int i = 0; i < uuids.length; i++) {
+            UUID uuid = uuids[i];
             if (uuid == null) {
                 continue;
             }
             ServerPlayer player = serverLevel.getServer().getPlayerList().getPlayer(uuid);
             if (player != null) {
                 PacketDistributor.sendToPlayer(player, payload);
+                PacketDistributor.sendToPlayer(player, new ClientboundDuelHandPayload(datas[i].getHand()));
             }
         }
     }

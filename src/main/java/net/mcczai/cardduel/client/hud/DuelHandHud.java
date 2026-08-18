@@ -3,11 +3,13 @@ package net.mcczai.cardduel.client.hud;
 import net.mcczai.cardduel.API.CdAPI;
 import net.mcczai.cardduel.CardduelMod;
 import net.mcczai.cardduel.API.item.nbt.CardDataAccessor;
+import net.mcczai.cardduel.client.duel.ClientDuelHand;
+import net.mcczai.cardduel.client.duel.ClientDuelState;
+import net.mcczai.cardduel.client.duel.DuelCameraManager;
 import net.mcczai.cardduel.client.resource.ClientCardIndex;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -18,7 +20,11 @@ import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-//类炉石渲染片段(还未使用)2026.8.12留
+
+/**
+ * 炉石式手牌 HUD：对局中把手牌（数据源 = ClientboundDuelHandPayload）平铺在窗口下方。
+ * 手牌点击选牌/出牌交互在 P1-3 接入（HudClickManager）。
+ */
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(modid = CardduelMod.MODID, value = Dist.CLIENT)
 public class DuelHandHud {
@@ -33,55 +39,58 @@ public class DuelHandHud {
         if (mc.screen != null || mc.player == null || mc.level == null) {
             return;
         }
-        GuiGraphics guiGraphics = event.getGuiGraphics();
-        int screenWidth = mc.getWindow().getGuiScaledWidth();
-        int screenHeight = mc.getWindow().getGuiScaledHeight();
+        if (!DuelCameraManager.inDuelView()) {
+            return;
+        }
+        List<ItemStack> hand = ClientDuelHand.get();
+        if (hand.isEmpty()) {
+            return;
+        }
 
-        List<ResourceLocation> hand = new ArrayList<>();
-        Inventory inventory = mc.player.getInventory();
-        for (int i = 0; i < 9; i++) {
-            ItemStack stack = inventory.getItem(i);
-            if (stack.isEmpty() || !(stack.getItem() instanceof CardDataAccessor accessor) || !accessor.isInDuel(stack)) {
+        GuiGraphics guiGraphics = event.getGuiGraphics();
+        int screenWidth = guiGraphics.guiWidth();
+        int screenHeight = guiGraphics.guiHeight();
+
+        List<ResourceLocation> textures = new ArrayList<>();
+        for (ItemStack stack : hand) {
+            if (!(stack.getItem() instanceof CardDataAccessor accessor)) {
                 continue;
             }
             Optional<ClientCardIndex> cardIndex = CdAPI.getClientCardIndex(accessor.getCardId(stack));
-            if (cardIndex.isEmpty()) {
-                continue;
-            }
-            ResourceLocation texture = cardIndex.get().getTexture();
+            ResourceLocation texture = cardIndex.map(ClientCardIndex::getTexture).orElse(null);
             if (texture != null) {
-                hand.add(texture);
+                textures.add(texture);
             }
         }
-        if (hand.isEmpty()) {
+        if (textures.isEmpty()) {
             return;
         }
 
         double mouseX = mc.mouseHandler.xpos() * screenWidth / mc.getWindow().getScreenWidth();
         double mouseY = mc.mouseHandler.ypos() * screenHeight / mc.getWindow().getScreenHeight();
 
-        int totalWidth = hand.size() * CARD_W + (hand.size() - 1) * GAP;
+        int totalWidth = textures.size() * CARD_W + (textures.size() - 1) * GAP;
         int startX = (screenWidth - totalWidth) / 2;
         int y = screenHeight - 78;
 
         int hovered = -1;
-        for (int i = 0; i < hand.size(); i++) {
+        for (int i = 0; i < textures.size(); i++) {
             int x = startX + i * (CARD_W + GAP);
             if (mouseX >= x && mouseX < x + CARD_W && mouseY >= y && mouseY < y + CARD_H) {
                 hovered = i;
             }
         }
 
-        for (int i = 0; i < hand.size(); i++) {
+        for (int i = 0; i < textures.size(); i++) {
             if (i == hovered) {
                 continue;
             }
-            drawCard(guiGraphics, hand.get(i), startX + i * (CARD_W + GAP), y, CARD_W, CARD_H, false);
+            drawCard(guiGraphics, textures.get(i), startX + i * (CARD_W + GAP), y, CARD_W, CARD_H, false);
         }
         if (hovered >= 0) {
             int hx = startX + hovered * (CARD_W + GAP) - HOVER_SCALE;
             int hy = y - HOVER_SCALE;
-            drawCard(guiGraphics, hand.get(hovered), hx, hy, CARD_W + HOVER_SCALE * 2, CARD_H + HOVER_SCALE * 2, true);
+            drawCard(guiGraphics, textures.get(hovered), hx, hy, CARD_W + HOVER_SCALE * 2, CARD_H + HOVER_SCALE * 2, true);
         }
     }
 

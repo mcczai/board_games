@@ -153,7 +153,14 @@ public class DuelPlayerData {
     // ==================== NBT ====================
 
     public void save(CompoundTag tag, HolderLookup.Provider provider) {
+        savePublic(tag, provider);
         tag.put("Hand", saveStackList(this.hand, provider));
+    }
+
+    /**
+     * 只写公开数据（不含手牌内容），用于方块实体同步包。
+     */
+    public void savePublic(CompoundTag tag, HolderLookup.Provider provider) {
         tag.put("Deck", saveStackList(this.deck, provider));
         tag.put("Discard", saveStackList(this.discard, provider));
 

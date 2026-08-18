@@ -43,6 +43,12 @@
   "cardduel.duel.cmd.not_your_turn": "It is not your turn",
   "cardduel.duel.cmd.endturn_ok": "Turn ended",
 
+  "cardduel.hud.turn": "Round %s",
+  "cardduel.hud.end_turn": "End Turn",
+  "cardduel.hud.hp": "HP %s/%s",
+  "cardduel.hud.mp": "Mana %s/%s",
+  "cardduel.hud.deck_fatigue": "Deck %s · Fatigue %s",
+
   "cardduel.tribe.ender": "Ender",
   "cardduel.tribe.nature": "Nature",
   "cardduel.tribe.monster": "Monster",

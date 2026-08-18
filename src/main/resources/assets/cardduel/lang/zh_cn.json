@@ -43,6 +43,12 @@
   "cardduel.duel.cmd.not_your_turn": "还没到你的回合",
   "cardduel.duel.cmd.endturn_ok": "回合结束",
 
+  "cardduel.hud.turn": "第 %s 轮",
+  "cardduel.hud.end_turn": "结束回合",
+  "cardduel.hud.hp": "生命 %s/%s",
+  "cardduel.hud.mp": "法力 %s/%s",
+  "cardduel.hud.deck_fatigue": "牌库 %s · 疲劳 %s",
+
   "cardduel.tribe.ender": "末影",
   "cardduel.tribe.nature": "自然",
   "cardduel.tribe.monster": "怪物",

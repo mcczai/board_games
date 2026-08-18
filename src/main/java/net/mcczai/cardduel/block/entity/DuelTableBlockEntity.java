@@ -277,6 +277,22 @@ public class DuelTableBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
         super.saveAdditional(tag, provider);
+        savePublic(tag, provider);
+
+        // 全量数据（含手牌）落盘，覆盖上面写入的公开视图
+        CompoundTag hostTag = new CompoundTag();
+        this.hostData.save(hostTag, provider);
+        tag.put("HostData", hostTag);
+
+        CompoundTag guestTag = new CompoundTag();
+        this.guestData.save(guestTag, provider);
+        tag.put("GuestData", guestTag);
+    }
+
+    /**
+     * 只写公开数据（不含手牌内容），供同步包使用。
+     */
+    private void savePublic(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putString("Phase", this.phase.name());
         tag.putInt("ManaCap", this.manaCap);
         tag.putInt("HpCap", this.hpCap);
@@ -292,11 +308,11 @@ public class DuelTableBlockEntity extends BlockEntity {
         }
 
         CompoundTag hostTag = new CompoundTag();
-        this.hostData.save(hostTag, provider);
+        this.hostData.savePublic(hostTag, provider);
         tag.put("HostData", hostTag);
 
         CompoundTag guestTag = new CompoundTag();
-        this.guestData.save(guestTag, provider);
+        this.guestData.savePublic(guestTag, provider);
         tag.put("GuestData", guestTag);
     }
 
@@ -323,7 +339,10 @@ public class DuelTableBlockEntity extends BlockEntity {
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
-        return this.saveWithoutMetadata(provider);
+        // 同步包只含公开数据：手牌内容经 ClientboundDuelHandPayload 定向发给本人
+        CompoundTag tag = new CompoundTag();
+        savePublic(tag, provider);
+        return tag;
     }
 
     @Override
