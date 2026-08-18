@@ -22,6 +22,11 @@ public final class DuelEngine {
      * 空手右键牌桌：入座 / 打开设置界面 / 触发开局。
      */
     public static InteractionResult handleTableUse(ServerPlayer player, DuelTableBlockEntity table) {
+        if (!table.isDoubleTable()) {
+            player.displayClientMessage(Component.translatable("cardduel.duel.need_double"), false);
+            return InteractionResult.SUCCESS;
+        }
+
         DuelSeat seat = player.getData(ModAttachments.DUEL_SEAT.get());
         if (seat != null && !seat.tablePos().equals(table.getBlockPos())) {
             player.displayClientMessage(Component.translatable("cardduel.duel.already_seated"), false);

@@ -1,5 +1,6 @@
 package net.mcczai.cardduel.block.entity;
 
+import net.mcczai.cardduel.block.DuelTableBlock;
 import net.mcczai.cardduel.duel.DuelPhase;
 import net.mcczai.cardduel.duel.DuelPlayerData;
 import net.mcczai.cardduel.init.ModAttachments;
@@ -8,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -160,6 +162,37 @@ public class DuelTableBlockEntity extends BlockEntity {
         List<ItemStack> merged = new ArrayList<>(hostData.getDeck());
         merged.addAll(guestData.getDeck());
         return merged;
+    }
+
+    /**
+     * 是否为双人牌桌（两张牌桌并排放置）。
+     */
+    public boolean isDoubleTable() {
+        return this.getBlockState().getValue(DuelTableBlock.DOUBLE);
+    }
+
+    /**
+     * 牌桌被破坏时清理双方座位 attachment 并通知玩家。
+     * 方块实体数据随方块一起销毁，无需写回。
+     */
+    public void clearSeatsOnBreak(@Nullable MinecraftServer server) {
+        if (server == null) {
+            return;
+        }
+        if (hostUuid != null) {
+            ServerPlayer host = server.getPlayerList().getPlayer(hostUuid);
+            if (host != null) {
+                host.removeData(ModAttachments.DUEL_SEAT.get());
+                host.displayClientMessage(Component.translatable("cardduel.duel.table_broken"), false);
+            }
+        }
+        if (guestUuid != null) {
+            ServerPlayer guest = server.getPlayerList().getPlayer(guestUuid);
+            if (guest != null) {
+                guest.removeData(ModAttachments.DUEL_SEAT.get());
+                guest.displayClientMessage(Component.translatable("cardduel.duel.table_broken"), false);
+            }
+        }
     }
 
     /**

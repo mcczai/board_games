@@ -17,6 +17,8 @@
   "cardduel.duel.guest_seated": "你已入座为挑战者",
   "cardduel.duel.already_guest": "你已在本桌入座",
   "cardduel.duel.already_seated": "你已在其他牌桌入座，请先潜行右键离座",
+  "cardduel.duel.need_double": "需要双人牌桌（两张牌桌并排放置）才能开始对局",
+  "cardduel.duel.table_broken": "牌桌已被破坏，你已离座",
   "cardduel.duel.waiting_start": "等待双方提交牌组（开局功能下一阶段开放）",
   "cardduel.duel.cant_leave": "对局进行中，无法离座",
   "cardduel.duel.leave_ok": "已离座",

@@ -17,6 +17,8 @@
   "cardduel.duel.guest_seated": "You are now seated as the challenger",
   "cardduel.duel.already_guest": "You are already seated at this table",
   "cardduel.duel.already_seated": "You are seated at another table; sneak + right-click to leave first",
+  "cardduel.duel.need_double": "A double duel table (two tables side by side) is required to start a duel",
+  "cardduel.duel.table_broken": "The duel table was broken; you left your seat",
   "cardduel.duel.waiting_start": "Waiting for both decks (starting the duel arrives in the next stage)",
   "cardduel.duel.cant_leave": "Cannot leave while a duel is in progress",
   "cardduel.duel.leave_ok": "You left the table",
