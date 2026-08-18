@@ -84,7 +84,7 @@ public final class DuelEngine {
             table.cancelDeck(player);
         }
 
-        player.setData(ModAttachments.DUEL_SEAT.get(), null);
+        player.removeData(ModAttachments.DUEL_SEAT.get());
         player.displayClientMessage(Component.translatable("cardduel.duel.leave_ok"), false);
         return InteractionResult.SUCCESS;
     }

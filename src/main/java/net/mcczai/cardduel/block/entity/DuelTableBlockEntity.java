@@ -169,7 +169,7 @@ public class DuelTableBlockEntity extends BlockEntity {
         if (guestUuid != null && server != null) {
             ServerPlayer guest = server.getPlayerList().getPlayer(guestUuid);
             if (guest != null) {
-                guest.setData(ModAttachments.DUEL_SEAT.get(), null);
+                guest.removeData(ModAttachments.DUEL_SEAT.get());
             }
         }
     }
