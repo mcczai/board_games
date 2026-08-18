@@ -30,6 +30,8 @@ public class DuelPlayerData {
     private final ItemStack[] board = new ItemStack[BOARD_SIZE];
     /** 每个槽位的召唤回合号（判定召唤失调） */
     private final int[] summonTurn = new int[BOARD_SIZE];
+    /** 每个槽位最近一次攻击时的回合号（判定每回合只能攻击一次） */
+    private final int[] attackTurn = new int[BOARD_SIZE];
 
     private int hp;
     private int mp;
@@ -68,6 +70,10 @@ public class DuelPlayerData {
 
     public int[] getSummonTurn() {
         return summonTurn;
+    }
+
+    public int[] getAttackTurn() {
+        return attackTurn;
     }
 
     public void setDeck(List<ItemStack> cards) {
@@ -141,6 +147,7 @@ public class DuelPlayerData {
         this.discard.clear();
         Arrays.fill(this.board, ItemStack.EMPTY);
         Arrays.fill(this.summonTurn, 0);
+        Arrays.fill(this.attackTurn, 0);
         this.hp = 0;
         this.mp = 0;
         this.mpMax = 0;
@@ -170,6 +177,7 @@ public class DuelPlayerData {
         }
         tag.put("Board", boardTag);
         tag.putIntArray("SummonTurn", this.summonTurn);
+        tag.putIntArray("AttackTurn", this.attackTurn);
 
         tag.putInt("Hp", this.hp);
         tag.putInt("Mp", this.mp);
@@ -199,6 +207,12 @@ public class DuelPlayerData {
         int[] turns = tag.getIntArray("SummonTurn");
         for (int i = 0; i < Math.min(turns.length, BOARD_SIZE); i++) {
             this.summonTurn[i] = turns[i];
+        }
+
+        Arrays.fill(this.attackTurn, 0);
+        int[] attacks = tag.getIntArray("AttackTurn");
+        for (int i = 0; i < Math.min(attacks.length, BOARD_SIZE); i++) {
+            this.attackTurn[i] = attacks[i];
         }
 
         this.hp = tag.getInt("Hp");

@@ -26,7 +26,7 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 public class DuelCameraManager {
 
     /** 相机离桌面高度（米） */
-    private static final float CAMERA_HEIGHT = 6.0F;
+    public static final float CAMERA_HEIGHT = 6.0F;
 
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {

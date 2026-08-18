@@ -5,8 +5,11 @@ import net.mcczai.cardduel.duel.DuelEngine;
 import net.mcczai.cardduel.duel.DuelPhase;
 import net.mcczai.cardduel.duel.DuelSeat;
 import net.mcczai.cardduel.init.ModAttachments;
+import net.mcczai.cardduel.network.payload.ServerboundAttackPayload;
 import net.mcczai.cardduel.network.payload.ServerboundEndTurnPayload;
 import net.mcczai.cardduel.network.payload.ServerboundLeavePayload;
+import net.mcczai.cardduel.network.payload.ServerboundMulliganPayload;
+import net.mcczai.cardduel.network.payload.ServerboundPlayCardPayload;
 import net.mcczai.cardduel.network.payload.ServerboundSetupPayload;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -31,7 +34,50 @@ public final class DuelNet {
         event.registrar("1")
                 .playToServer(ServerboundSetupPayload.TYPE, ServerboundSetupPayload.STREAM_CODEC, DuelNet::handleSetup)
                 .playToServer(ServerboundLeavePayload.TYPE, ServerboundLeavePayload.STREAM_CODEC, DuelNet::handleLeave)
-                .playToServer(ServerboundEndTurnPayload.TYPE, ServerboundEndTurnPayload.STREAM_CODEC, DuelNet::handleEndTurn);
+                .playToServer(ServerboundEndTurnPayload.TYPE, ServerboundEndTurnPayload.STREAM_CODEC, DuelNet::handleEndTurn)
+                .playToServer(ServerboundPlayCardPayload.TYPE, ServerboundPlayCardPayload.STREAM_CODEC, DuelNet::handlePlayCard)
+                .playToServer(ServerboundAttackPayload.TYPE, ServerboundAttackPayload.STREAM_CODEC, DuelNet::handleAttack)
+                .playToServer(ServerboundMulliganPayload.TYPE, ServerboundMulliganPayload.STREAM_CODEC, DuelNet::handleMulligan);
+    }
+
+    /**
+     * 出牌。
+     */
+    private static void handlePlayCard(ServerboundPlayCardPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> withTable(context, (player, table) ->
+                DuelEngine.playCard(player, table, payload.handIndex(), payload.boardSlot())));
+    }
+
+    /**
+     * 攻击。
+     */
+    private static void handleAttack(ServerboundAttackPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> withTable(context, (player, table) ->
+                DuelEngine.attack(player, table, payload.attackerSlot(), payload.targetSlot())));
+    }
+
+    /**
+     * 换牌确认。
+     */
+    private static void handleMulligan(ServerboundMulliganPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> withTable(context, (player, table) ->
+                DuelEngine.mulligan(player, table, payload.indices())));
+    }
+
+    /**
+     * 按玩家座位定位牌桌后执行操作。
+     */
+    private static void withTable(IPayloadContext context, java.util.function.BiConsumer<ServerPlayer, DuelTableBlockEntity> action) {
+        if (!(context.player() instanceof ServerPlayer serverPlayer)) {
+            return;
+        }
+        DuelSeat seat = serverPlayer.getData(ModAttachments.DUEL_SEAT.get());
+        if (seat == null) {
+            return;
+        }
+        if (serverPlayer.serverLevel().getBlockEntity(seat.tablePos()) instanceof DuelTableBlockEntity table) {
+            action.accept(serverPlayer, table);
+        }
     }
 
     /**

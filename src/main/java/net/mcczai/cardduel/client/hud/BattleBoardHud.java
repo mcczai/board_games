@@ -3,6 +3,7 @@ package net.mcczai.cardduel.client.hud;
 import net.mcczai.cardduel.CardduelMod;
 import net.mcczai.cardduel.client.duel.ClientDuelState;
 import net.mcczai.cardduel.client.duel.DuelCameraManager;
+import net.mcczai.cardduel.client.duel.DuelInteraction;
 import net.mcczai.cardduel.client.duel.HudClickManager;
 import net.mcczai.cardduel.network.payload.ClientboundDuelSyncPayload;
 import net.minecraft.client.Minecraft;
@@ -52,7 +53,20 @@ public class BattleBoardHud {
         String turn = Component.translatable("cardduel.hud.turn", sync.turnNumber()).getString();
         g.drawCenteredString(mc.font, turn, sw / 2, MARGIN + 4, 0xFFFFFFFF);
 
-        HudClickManager.renderEndTurnButton(g, myTurn);
+        // 选中 / 换牌提示
+        if ("MULLIGAN".equals(sync.phase())) {
+            String hint = Component.translatable("cardduel.hud.mulligan_hint",
+                    DuelInteraction.getMulliganSelection().size()).getString();
+            g.drawCenteredString(mc.font, hint, sw / 2, MARGIN + 20, 0xFFFFD54F);
+        } else if (DuelInteraction.getSelectedHand() >= 0) {
+            g.drawCenteredString(mc.font, Component.translatable("cardduel.hud.selected_hand").getString(),
+                    sw / 2, MARGIN + 20, 0xFF81C784);
+        } else if (DuelInteraction.getSelectedBoard() >= 0) {
+            g.drawCenteredString(mc.font, Component.translatable("cardduel.hud.selected_board").getString(),
+                    sw / 2, MARGIN + 20, 0xFFFFD54F);
+        }
+
+        HudClickManager.renderEndTurnButton(g, myTurn, "MULLIGAN".equals(sync.phase()));
     }
 
     private static void renderPlayerBar(GuiGraphics g, int x, int y, String name,

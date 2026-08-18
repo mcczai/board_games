@@ -30,4 +30,17 @@ public final class SkillHooks {
     /** 玩家受到伤害时（hp 已扣减，胜负判定之前） */
     public static void onPlayerDamaged(DuelTableBlockEntity table, DuelPlayerData data, int amount) {
     }
+
+    /** 召唤卡上场时 */
+    public static void onSummoned(DuelTableBlockEntity table, DuelPlayerData owner, int slot, ItemStack card) {
+    }
+
+    /** 召唤卡发起攻击时（伤害结算之前） */
+    public static void onAttack(DuelTableBlockEntity table, DuelPlayerData attackerOwner, int attackerSlot,
+                                ItemStack attackerCard, DuelPlayerData targetOwner, int targetSlot, ItemStack targetCard) {
+    }
+
+    /** 召唤卡死亡进入弃牌堆时（槽位已清空） */
+    public static void onDeath(DuelTableBlockEntity table, DuelPlayerData owner, int slot, ItemStack card) {
+    }
 }
