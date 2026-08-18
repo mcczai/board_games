@@ -34,6 +34,8 @@ public class DuelPlayerData {
     private int hp;
     private int mp;
     private int mpMax;
+    /** 该玩家的回合计数（决定法力上限 = min(回合数, 封顶)） */
+    private int turnCount;
     /** 疲劳计数：第 n 次牌库抽空扣 n 点血 */
     private int fatigue;
 
@@ -115,6 +117,14 @@ public class DuelPlayerData {
         this.mpMax = Math.max(mpMax, 1);
     }
 
+    public int getTurnCount() {
+        return turnCount;
+    }
+
+    public void setTurnCount(int turnCount) {
+        this.turnCount = Math.max(turnCount, 0);
+    }
+
     public int getFatigue() {
         return fatigue;
     }
@@ -134,6 +144,7 @@ public class DuelPlayerData {
         this.hp = 0;
         this.mp = 0;
         this.mpMax = 0;
+        this.turnCount = 0;
         this.fatigue = 0;
         this.deckReady = false;
         this.mulliganDone = false;
@@ -156,6 +167,7 @@ public class DuelPlayerData {
         tag.putInt("Hp", this.hp);
         tag.putInt("Mp", this.mp);
         tag.putInt("MpMax", this.mpMax);
+        tag.putInt("TurnCount", this.turnCount);
         tag.putInt("Fatigue", this.fatigue);
         tag.putBoolean("DeckReady", this.deckReady);
         tag.putBoolean("MulliganDone", this.mulliganDone);
@@ -185,6 +197,7 @@ public class DuelPlayerData {
         this.hp = tag.getInt("Hp");
         this.mp = tag.getInt("Mp");
         this.mpMax = tag.getInt("MpMax");
+        this.turnCount = tag.getInt("TurnCount");
         this.fatigue = tag.getInt("Fatigue");
         this.deckReady = tag.getBoolean("DeckReady");
         this.mulliganDone = tag.getBoolean("MulliganDone");

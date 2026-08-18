@@ -5,6 +5,7 @@ import net.mcczai.cardduel.duel.DuelEngine;
 import net.mcczai.cardduel.duel.DuelPhase;
 import net.mcczai.cardduel.duel.DuelSeat;
 import net.mcczai.cardduel.init.ModAttachments;
+import net.mcczai.cardduel.network.payload.ServerboundEndTurnPayload;
 import net.mcczai.cardduel.network.payload.ServerboundLeavePayload;
 import net.mcczai.cardduel.network.payload.ServerboundSetupPayload;
 import net.minecraft.network.chat.Component;
@@ -29,7 +30,26 @@ public final class DuelNet {
     public static void registerServer(RegisterPayloadHandlersEvent event) {
         event.registrar("1")
                 .playToServer(ServerboundSetupPayload.TYPE, ServerboundSetupPayload.STREAM_CODEC, DuelNet::handleSetup)
-                .playToServer(ServerboundLeavePayload.TYPE, ServerboundLeavePayload.STREAM_CODEC, DuelNet::handleLeave);
+                .playToServer(ServerboundLeavePayload.TYPE, ServerboundLeavePayload.STREAM_CODEC, DuelNet::handleLeave)
+                .playToServer(ServerboundEndTurnPayload.TYPE, ServerboundEndTurnPayload.STREAM_CODEC, DuelNet::handleEndTurn);
+    }
+
+    /**
+     * 结束回合（HUD 按钮 / 未来交互共用）。
+     */
+    private static void handleEndTurn(ServerboundEndTurnPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer serverPlayer)) {
+                return;
+            }
+            DuelSeat seat = serverPlayer.getData(ModAttachments.DUEL_SEAT.get());
+            if (seat == null) {
+                return;
+            }
+            if (serverPlayer.serverLevel().getBlockEntity(seat.tablePos()) instanceof DuelTableBlockEntity table) {
+                DuelEngine.endTurn(serverPlayer, table);
+            }
+        });
     }
 
     /**

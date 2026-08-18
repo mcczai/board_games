@@ -38,6 +38,12 @@ public class DuelTableBlockEntity extends BlockEntity {
     private int manaCap = DEFAULT_MANA_CAP;
     private int hpCap = DEFAULT_HP_CAP;
 
+    /** 全局轮次（提示与行动顺序用；每回合 +1） */
+    private int turnNumber;
+    /** 当前行动方 */
+    @Nullable
+    private UUID activeUuid;
+
     @Nullable
     private UUID hostUuid;
     @Nullable
@@ -72,6 +78,27 @@ public class DuelTableBlockEntity extends BlockEntity {
     public void setCaps(int manaCap, int hpCap) {
         this.manaCap = manaCap;
         this.hpCap = hpCap;
+        sync();
+    }
+
+    // ==================== 回合 ====================
+
+    public int getTurnNumber() {
+        return turnNumber;
+    }
+
+    public void setTurnNumber(int turnNumber) {
+        this.turnNumber = turnNumber;
+        sync();
+    }
+
+    @Nullable
+    public UUID getActiveUuid() {
+        return activeUuid;
+    }
+
+    public void setActiveUuid(@Nullable UUID activeUuid) {
+        this.activeUuid = activeUuid;
         sync();
     }
 
@@ -208,7 +235,7 @@ public class DuelTableBlockEntity extends BlockEntity {
     }
 
     /**
-     * 整桌重置回 IDLE（房主离场 / 对局结束复用）。
+     * 整桌重置回 IDLE（房主离场时调用）。
      */
     public void resetTable() {
         this.hostUuid = null;
@@ -218,12 +245,26 @@ public class DuelTableBlockEntity extends BlockEntity {
         this.hpCap = DEFAULT_HP_CAP;
         this.hostData.reset();
         this.guestData.reset();
+        this.turnNumber = 0;
+        this.activeUuid = null;
+        sync();
+    }
+
+    /**
+     * 对局结束：清空对局数据，保留座位与上限设置，回到 WAITING 可直接下一局。
+     */
+    public void resetDuel() {
+        this.hostData.reset();
+        this.guestData.reset();
+        this.turnNumber = 0;
+        this.activeUuid = null;
+        this.phase = DuelPhase.WAITING;
         sync();
     }
 
     // ==================== 同步 ====================
 
-    private void sync() {
+    public void sync() {
         this.setChanged();
         if (this.level != null && !this.level.isClientSide) {
             BlockState state = this.level.getBlockState(this.worldPosition);
@@ -239,6 +280,10 @@ public class DuelTableBlockEntity extends BlockEntity {
         tag.putString("Phase", this.phase.name());
         tag.putInt("ManaCap", this.manaCap);
         tag.putInt("HpCap", this.hpCap);
+        tag.putInt("TurnNumber", this.turnNumber);
+        if (this.activeUuid != null) {
+            tag.putUUID("Active", this.activeUuid);
+        }
         if (this.hostUuid != null) {
             tag.putUUID("Host", this.hostUuid);
         }
@@ -267,6 +312,8 @@ public class DuelTableBlockEntity extends BlockEntity {
         }
         this.manaCap = tag.getInt("ManaCap");
         this.hpCap = tag.getInt("HpCap");
+        this.turnNumber = tag.getInt("TurnNumber");
+        this.activeUuid = tag.contains("Active") ? tag.getUUID("Active") : null;
         this.hostUuid = tag.contains("Host") ? tag.getUUID("Host") : null;
         this.guestUuid = tag.contains("Guest") ? tag.getUUID("Guest") : null;
 

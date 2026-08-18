@@ -1,6 +1,7 @@
 package net.mcczai.cardduel.items;
 
 import net.mcczai.cardduel.block.entity.DuelTableBlockEntity;
+import net.mcczai.cardduel.duel.DuelEngine;
 import net.mcczai.cardduel.init.ModBlocks;
 import net.mcczai.cardduel.init.ModDataComponents;
 import net.mcczai.cardduel.items.inventory.CardBagContents;
@@ -76,6 +77,7 @@ public class CardBagItem extends Item {
             } else {
                 table.submitDeck(player, contents.items());
                 player.displayClientMessage(Component.translatable("cardduel.bag.ready"), true);
+                DuelEngine.notifyDeckReady(table);
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
