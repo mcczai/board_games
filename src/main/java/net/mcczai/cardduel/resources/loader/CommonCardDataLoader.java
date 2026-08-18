@@ -25,7 +25,7 @@ import java.util.zip.ZipFile;
 
 public final class CommonCardDataLoader {
     private static final Marker MARKER = MarkerManager.getMarker("CardDataLoader");
-    public static final Pattern CARD_DATA_PATTERN = Pattern.compile("^(\\w+)/cards/data/([\\w/]+)\\.json$");
+    public static final Pattern CARD_DATA_PATTERN = Pattern.compile("^([a-z0-9_.-]+)/cards/data/([a-z0-9/._-]+)\\.json$");
 
     /**
      *ZIP格式加载

@@ -23,7 +23,7 @@ import java.util.zip.ZipFile;
 
 public final class LanguageLoader {
     private static final Marker MARKER = MarkerManager.getMarker("LanguageLoader");
-    private static final Pattern LANG_PATTERN = Pattern.compile("^\\w+/lang/(\\w+)\\.json$");
+    private static final Pattern LANG_PATTERN = Pattern.compile("^[a-z0-9_.-]+/lang/(\\w+)\\.json$");
 
     public static boolean load(ZipFile zipFile, String zipPath) {
         Matcher matcher = LANG_PATTERN.matcher(zipPath);

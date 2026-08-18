@@ -25,7 +25,7 @@ import static net.mcczai.cardduel.client.resource.ClientCardPackLoader.GSON;
 
 public class PackInfoLoader {
     private static final Marker MARKER = MarkerManager.getMarker("PackInfoLoader");
-    private static final Pattern PACK_INFO_PATTERN = Pattern.compile("^(\\w+)/pack\\.json$");
+    private static final Pattern PACK_INFO_PATTERN = Pattern.compile("^([a-z0-9_.-]+)/pack\\.json$");
 
     public static boolean load(ZipFile zipFile, String zipPath) {
         Matcher matcher = PACK_INFO_PATTERN.matcher(zipPath);

@@ -1,7 +1,9 @@
 package net.mcczai.cardduel.init;
 
 import net.mcczai.cardduel.block.entity.DuelTableBlockEntity;
+import net.minecraft.Util;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -16,5 +18,5 @@ public class ModBlockEntities {
             ()-> BlockEntityType.Builder.of(
                     DuelTableBlockEntity::new,
                     ModBlocks.DUELTABLE_BLOCK.get())
-                    .build(null));
+                    .build(Util.fetchChoiceType(References.BLOCK_ENTITY, "cardduel:dueltable")));
 }

@@ -10,5 +10,7 @@ public class OtherConfig {
 
         builder.comment("When enabled, the reload command will not overwrite the default model file under config");
         DEFAULT_PACK_DEBUG = builder.define("DefaultPackDebug",false);
+
+        builder.pop();
     }
 }

@@ -33,7 +33,7 @@ import static net.mcczai.cardduel.resources.CommonCardPackLoader.GSON;
 public final class VersionChecker {
 
     public static final Marker MARKER = MarkerManager.getMarker("VersionChecker");
-    public static final Pattern PACK_INFO_PATTERN = Pattern.compile("^\\w+/pack\\.json$");
+    public static final Pattern PACK_INFO_PATTERN = Pattern.compile("^[a-z0-9_.-]+/pack\\.json$");
     private static final Map<Path, Boolean> VERSION_CHECK_CACHE = Maps.newHashMap();
 
     public static boolean match(File dir){

@@ -9,7 +9,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-// TODO: 记得看md里的归档！！！！！！！！
+
 @Mod(CardduelMod.MODID)
 public class CardduelMod {
 

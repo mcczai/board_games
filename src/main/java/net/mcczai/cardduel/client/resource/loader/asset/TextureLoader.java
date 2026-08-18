@@ -19,7 +19,7 @@ import java.util.zip.ZipFile;
 
 public class TextureLoader {
     private static final Marker MARKER = MarkerManager.getMarker("TextureLoader");
-    private static final Pattern TEXTURE_PATTERN = Pattern.compile("^(\\w+)/textures/([\\w/]+)\\.png$");
+    private static final Pattern TEXTURE_PATTERN = Pattern.compile("^([a-z0-9_.-]+)/textures/([a-z0-9/._-]+)\\.png$");
 
     public static boolean load(ZipFile zipFile, File zipFileRef, String zipPath) {
         Matcher matcher = TEXTURE_PATTERN.matcher(zipPath);

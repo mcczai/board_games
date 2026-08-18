@@ -54,17 +54,6 @@ public final class GetJarResources {
         }
     }
 
-    /**
-     * 复制本模组的文件夹到指定文件夹。将强行覆盖原文件夹。
-     *
-     * @param srcPath jar 中的源文件地址
-     * @param root    想要复制到的根目录
-     * @param path    复制后的路径
-     */
-    public static void copyModDirectory(String srcPath, Path root, String path) {
-        copyModDirectory(CardduelMod.class, srcPath, root, path);
-    }
-
     @Nullable
     public static InputStream readModFile(String filePath) {
         URL url = CardduelMod.class.getResource(filePath);

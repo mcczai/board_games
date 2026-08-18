@@ -1,10 +1,10 @@
 # Card Duel Mod — 问题清单
 
-> 自动生成于代码审查 | 共 **11** 处问题（已修复 **46** 处）
+> 自动生成于代码审查 | 共 **3** 处问题（已修复 **54** 处）
 
 ---
 
-## 🔴 Critical (0) — 已全部修复
+## 🔴 Critical (6/6) — 会导致崩溃/数据损坏/功能完全不可用
 
 | # | 文件 | 行号 | 说明 |
 |---|------|------|------|
@@ -17,7 +17,7 @@
 
 ---
 
-## 🟠 Major (7) — 显著运行时 Bug / 逻辑错误 / 架构问题
+## 🟠 Major (11/11) — 显著运行时 Bug / 逻辑错误 / 架构问题
 
 | #      | 文件                                                                       | 行号        | 说明                                                                                                                                                 |
 |--------|--------------------------------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -31,11 +31,11 @@
 | ~~14~~ | ~~`client/resource/serialize/ItemStackSerializer.java`~~ | ~~32~~ | ~~`ResourceLocation.tryBySeparator(itemName, ':')` — MC 1.21 中应为 `ResourceLocation.tryParse()`，**编译错误**~~ |
 | ~~15~~ | ~~`block/DuelTableBlock.java`~~                                              | ~~39-55~~     | ~~双重桌放置逻辑要求点击位置和相邻位置均已存在方块 → `DOUBLE=true` 实际上永远无法通过正常放置达成~~                                                                                           |
 | ~~16~~ | ~~`init/ModDataComponents.java` 与 `API/item/nbt/CardDataAccessor.java`~~ | ~~-~~     | ~~注册了 HP/ATK/MP/Type/Skill/CardId 等 DataComponent，但 `CardDataAccessor` 全部通过 `CUSTOM_DATA`（原始 NBT）读写，注册的组件从未被使用（仅 `CARD_ID` 和 `CARD_BUNDLE` 实际在用）~~ |
-| 17     | `CardduelCreativeTab.java`                                               | 19        | 标签页 ID `"tarp_tab"` 拼写错误，应为 `"trap"`。`en_us.json`、`zh_cn.json` 中翻译键也全部写错                                                                           |
+| ~~17~~ | ~~`CardduelCreativeTab.java`~~ | ~~19~~ | ~~标签页 ID `"tarp_tab"` 拼写错误，应为 `"trap"`。`en_us.json`、`zh_cn.json` 中翻译键也全部写错~~ |
 
 ---
 
-## 🟡 Minor — 代码质量 / 可维护性 / 死代码 (18)
+## 🟡 Minor(3/32) — 代码质量 / 可维护性 / 死代码
 
 ### Bug（小）
 | # | 文件 | 说明 |
@@ -53,9 +53,9 @@
 ### 死代码 / 空壳
 | # | 文件 | 说明 |
 |---|------|------|
-| 27 | `init/ModItem.java:38-48` | `onItemRegister` 的 `@SubscribeEvent` 被注释，导致 `CardItemManager.CARD_ITEM_MAP` 永不为空 → 整个 `CardItemManager` 为死代码 |
-| 28 | `items/CardItemManager.java` | 整类因事件未触发成为死代码（Map 从未被填充） |
-| 29 | `CardduelCreativeTab.java:29-51` | 23 行被注释的 MANA/EQUIP/SUMMON 标签页代码 |
+| ~~27~~ | ~~`init/ModItem.java:38-48`~~ | ~~`onItemRegister` 的 `@SubscribeEvent` 被注释，导致 `CardItemManager.CARD_ITEM_MAP` 永不为空 → 整个 `CardItemManager` 为死代码~~ |
+| ~~28~~ | ~~`items/CardItemManager.java`~~ | ~~整类因事件未触发成为死代码（Map 从未被填充）~~ |
+| ~~29~~ | ~~`CardduelCreativeTab.java:29-51`~~ | ~~23 行被注释的 MANA/EQUIP/SUMMON 标签页代码~~ |
 | ~~30~~ | ~~`block/blockstate/DuelTableType.java`~~ | ~~枚举完全未被任何代码引用~~ |
 | ~~31~~ | ~~`block/entity/DuelTableBlockEntity.java`~~ | ~~方块实体无任何自定义逻辑（无 NBT 保存/加载、无 tick、无数据存储）~~ |
 | ~~32~~ | ~~`player/getPlayerSight.java`~~ | ~~类名小写开头违反 Java 规范 + `getPlayerLookBlockDirection()` 始终返回 false + 公共字段 `Pix` 未被引用~~ |
@@ -66,12 +66,12 @@
 | ~~37~~ | ~~`items/component/Slots.java`~~ | ~~Record 类（Codec + StreamCodec），从未被使用~~ |
 | ~~38~~ | ~~`network/IMessage.java`~~ | ~~网络接口（encode/decode/handle），无人实现~~ |
 | ~~39~~ | ~~`network/SerialPacketBase.java`~~ | ~~空接口 `{}`，无人实现~~ |
-| 40 | `util/GetJarResources.java:64-66` | `copyModDirectory(String, Path, String)` 重载从未被调用 |
+| ~~40~~ | ~~`util/GetJarResources.java:64-66`~~ | ~~`copyModDirectory(String, Path, String)` 重载从未被调用~~ |
 | ~~41~~ | ~~`items/CardBundleItem.java:80-82`~~ | ~~`playDropContentsSound()` 定义但从未调用~~ |
 | ~~42~~ | ~~`items/CardBundleItem.java:18`~~ | ~~`MAX_ROW = 5` 字段从未被引用~~ |
 | 43 | `items/CardItem.java:33-41` | `useOn` 中 if 块为空（TODO 桩） |
 | 44 | `items/CardItem.java:44-47` | `Rclick` 为空实现（TODO 桩） |
-| 45 | `config/common/OtherConfig.java:8-13` | `builder.push("other")` 缺少对应的 `pop()` |
+| ~~45~~ | ~~`config/common/OtherConfig.java:8-13`~~ | ~~`builder.push("other")` 缺少对应的 `pop()`~~ |
 
 ### 架构 / 代码风格
 | #      | 文件 | 说明 |
@@ -81,12 +81,12 @@
 | ~~48~~ | ~~`API/DefaultAsset.java` 与 `resources/DefaultAssets.java`~~ | ~~两个仅差一个 's' 的类（单数/复数），功能应合并~~ |
 | ~~49~~     | ~~`resources/DefaultAssets.java:7`~~ | ~~`EMPTY_CARD_ID` 未声明为 `final`~~ |
 | ~~50~~     | ~~`init/ModBlocks.java:4`~~ | ~~未使用的 import `DuelTableBlockEntity`~~ |
-| 51     | `init/ModItem.java:12-18` | 5 个 import 仅被注释掉的 `onItemRegister` 方法使用 |
+| ~~51~~     | ~~`init/ModItem.java:12-18`~~ | ~~5 个 import 仅被注释掉的 `onItemRegister` 方法使用~~ |
 | ~~52~~     | ~~`CardduelMod.java:24`~~ | ~~参数命名 `IEventBus Bus` 首字母应为小写 `bus`~~ |
 | ~~53~~     | ~~`models/item/dueltable_block_item.json`~~ | ~~block 父模型下定义 `"layer0"` 纹理无效（block 模型不使用 layer0）~~ |
 | ~~54~~     | ~~`gradle.properties:41`~~ | ~~`mod_group_id=net.mcczai.carddduel` 多一个 'd'（实际包名为 `cardduel`）~~ |
 | ~~55~~     | ~~`custom/default_card_pack/.../lang/`~~ | ~~默认卡包仅有 `zh_cn.json`，缺少 `en_us.json`（非中文客户端看到的是原始翻译键）~~ |
-| 56     | `init/ModBlockEntities.java:19` | `.build(null)` 传递 null 而非 `DataFixers.getDataFixer()` |
+| ~~56~~     | ~~`init/ModBlockEntities.java:19`~~ | ~~`.build(null)` 传递 null 而非 `DataFixers.getDataFixer()`~~ |
 | 57     | 多处 | NeoForge 1.21+ 中 `@OnlyIn(Dist.CLIENT)` 行为改变，不再在加载时剥离类，可能不可靠 |
 | ~~58~~     | ~~`gradle.properties:10-11`~~ | ~~Parchment 映射版本 `1.20.6` 与目标 MC `1.21.1` 不匹配~~ |
 
@@ -97,14 +97,14 @@
 | 严重程度 | 数量     |
 |----------|--------|
 | 🔴 Critical | 0      |
-| 🟠 Major | 1      |
-| 🟡 Minor | 10     |
-| **总计** | **11** |
+| 🟠 Major | 0      |
+| 🟡 Minor | 3      |
+| **总计** | **3**  |
 
 | 类别 | 数量 |
 |------|------|
-| Bug | 5 |
-| DeadCode | 15 |
-| Architecture | 4 |
-| Compilation | 1 |
-| CodeStyle/Other | 7 |
+| Bug | 0 |
+| DeadCode | 2 |
+| Architecture | 1 |
+| Compilation | 0 |
+| CodeStyle/Other | 0 |
