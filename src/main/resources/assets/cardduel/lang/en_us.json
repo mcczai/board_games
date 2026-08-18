@@ -27,6 +27,7 @@
   "cardduel.duel.setup.mana": "Mana cap (1-99)",
   "cardduel.duel.setup.hp": "HP cap (1-999)",
   "cardduel.duel.setup.confirm": "Confirm",
+  "cardduel.duel.setup.cancel": "Cancel (Leave Table)",
 
   "cardduel.tribe.ender": "Ender",
   "cardduel.tribe.nature": "Nature",

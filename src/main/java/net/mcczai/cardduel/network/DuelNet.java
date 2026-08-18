@@ -1,7 +1,11 @@
 package net.mcczai.cardduel.network;
 
 import net.mcczai.cardduel.block.entity.DuelTableBlockEntity;
+import net.mcczai.cardduel.duel.DuelEngine;
 import net.mcczai.cardduel.duel.DuelPhase;
+import net.mcczai.cardduel.duel.DuelSeat;
+import net.mcczai.cardduel.init.ModAttachments;
+import net.mcczai.cardduel.network.payload.ServerboundLeavePayload;
 import net.mcczai.cardduel.network.payload.ServerboundSetupPayload;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,7 +28,30 @@ public final class DuelNet {
      */
     public static void registerServer(RegisterPayloadHandlersEvent event) {
         event.registrar("1")
-                .playToServer(ServerboundSetupPayload.TYPE, ServerboundSetupPayload.STREAM_CODEC, DuelNet::handleSetup);
+                .playToServer(ServerboundSetupPayload.TYPE, ServerboundSetupPayload.STREAM_CODEC, DuelNet::handleSetup)
+                .playToServer(ServerboundLeavePayload.TYPE, ServerboundLeavePayload.STREAM_CODEC, DuelNet::handleLeave);
+    }
+
+    /**
+     * 离座（设置界面"取消"按钮 / 未来的 HUD 离座按钮）。
+     * 依据玩家座位 attachment 定位牌桌并复用 DuelEngine 的离座逻辑。
+     */
+    private static void handleLeave(ServerboundLeavePayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer serverPlayer)) {
+                return;
+            }
+            DuelSeat seat = serverPlayer.getData(ModAttachments.DUEL_SEAT.get());
+            if (seat == null) {
+                return;
+            }
+            if (serverPlayer.serverLevel().getBlockEntity(seat.tablePos()) instanceof DuelTableBlockEntity table) {
+                DuelEngine.handleLeave(serverPlayer, table);
+            } else {
+                // 牌桌已不存在：直接清理残留座位
+                serverPlayer.removeData(ModAttachments.DUEL_SEAT.get());
+            }
+        });
     }
 
     /**

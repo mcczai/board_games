@@ -1,5 +1,6 @@
 package net.mcczai.cardduel.client.gui.screens.duel;
 
+import net.mcczai.cardduel.network.payload.ServerboundLeavePayload;
 import net.mcczai.cardduel.network.payload.ServerboundSetupPayload;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -44,7 +45,10 @@ public class DuelSetupScreen extends Screen {
         this.addRenderableWidget(this.manaBox);
         this.addRenderableWidget(this.hpBox);
         this.addRenderableWidget(Button.builder(Component.translatable("cardduel.duel.setup.confirm"), this::onConfirm)
-                .bounds(x, 126, 200, 20)
+                .bounds(x, 126, 95, 20)
+                .build());
+        this.addRenderableWidget(Button.builder(Component.translatable("cardduel.duel.setup.cancel"), this::onCancel)
+                .bounds(x + 105, 126, 95, 20)
                 .build());
 
         this.setInitialFocus(this.manaBox);
@@ -54,6 +58,14 @@ public class DuelSetupScreen extends Screen {
         int manaCap = Mth.clamp(parseInt(this.manaBox.getValue(), 10), 1, 99);
         int hpCap = Mth.clamp(parseInt(this.hpBox.getValue(), 30), 1, 999);
         PacketDistributor.sendToServer(new ServerboundSetupPayload(this.tablePos, manaCap, hpCap));
+        this.onClose();
+    }
+
+    /**
+     * 取消：关闭界面并离座（退出准备）。
+     */
+    private void onCancel(Button button) {
+        PacketDistributor.sendToServer(new ServerboundLeavePayload());
         this.onClose();
     }
 

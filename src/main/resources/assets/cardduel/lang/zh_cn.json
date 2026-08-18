@@ -27,6 +27,7 @@
   "cardduel.duel.setup.mana": "法力封顶（1-99）",
   "cardduel.duel.setup.hp": "生命上限（1-999）",
   "cardduel.duel.setup.confirm": "确认",
+  "cardduel.duel.setup.cancel": "取消（退出准备）",
 
   "cardduel.tribe.ender": "末影",
   "cardduel.tribe.nature": "自然",
