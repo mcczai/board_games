@@ -423,7 +423,7 @@ public final class DuelEngine {
      * 己方召唤卡攻击：targetSlot >= 0 打对方召唤卡（炉石式互伤），-1 打脸。
      * 装备机制：equip_elytra 冲锋（无视召唤失调）/ equip_trident 风怒（每回合两次）/
      * equip_ranged 远程（不受反击）/ equip_taunt 嘲讽（对方必须先攻击嘲讽单位）。
-     * 装备耐久：每次"受到攻击"（主攻击/反击/反伤）耐久 -1。
+     * 装备耐久：召唤物受到任意伤害时 -1（统一在 applyCardDamage 内处理）。
      */
     public static boolean attack(ServerPlayer player, DuelTableBlockEntity table, int attackerSlot, int targetSlot) {
         if (table.getPhase() != DuelPhase.PLAYING) {
@@ -495,21 +495,18 @@ public final class DuelEngine {
             boolean targetThorns = isThorns(targetAccess.getSkill(targetCard));
             SkillHooks.onAttack(table, attackerData, attackerSlot, attackerCard,
                     targetData, targetSlot, targetCard);
-            // 主攻击：目标装备耐久 -1，再结算伤害
-            tickEquipDurability(table, targetData, targetSlot);
+            // 主攻击（装备耐久磨损统一在 applyCardDamage 内按"受到伤害"处理）
             applyCardDamage(table, targetData, targetSlot, targetCard, atk);
             // 炉石式互伤（目标已死亡或攻击方为远程则无反击）
             if (!hasEquipSkill(attackerData, attackerSlot, "ranged")
                     && attackerData.getBoard()[attackerSlot] == attackerCard
                     && targetData.getBoard()[targetSlot] == targetCard) {
-                tickEquipDurability(table, attackerData, attackerSlot);
                 int counterAtk = targetAccess.getATK(targetCard) + equipAtk(targetData, targetSlot);
                 applyCardDamage(table, attackerData, attackerSlot, attackerCard, counterAtk);
             }
             // 反伤（接触伤害：无论目标是否死亡，攻击方都受 1 点伤害）
             if (targetThorns && attackerData.getBoard()[attackerSlot] == attackerCard) {
                 broadcast(table, Component.translatable("cardduel.duel.thorns_reflect"));
-                tickEquipDurability(table, attackerData, attackerSlot);
                 applyCardDamage(table, attackerData, attackerSlot, attackerCard, 1);
             }
         }
@@ -522,19 +519,36 @@ public final class DuelEngine {
     }
 
     /**
-     * 对战场卡牌造成伤害（直接扣本体 HP；装备层计入存活判定）。
-     * 魔法/陷阱伤害不磨损装备耐久——耐久只在"受到攻击"时 -1（tickEquipDurability）。
-     * equip_guard 减伤：受击伤害 -1。
-     * 本体 HP + 装备层 ≤ 0 → 清槽，卡与装备均重置数值后进弃牌堆。
+     * 对战场卡牌造成伤害。任意伤害来源（攻击/反击/反伤/魔法/陷阱）都会：
+     *  1. equip_guard 减伤：伤害 -1（减到 0 视为未受伤，不磨损装备）
+     *  2. 若仍有伤害：装备耐久 -1；耐久归零 → 装备重置后进弃牌堆，召唤物恢复原有属性
+     *  3. 本体扣血；本体 HP + 装备层 ≤ 0 → 清槽，卡与装备均重置数值后进弃牌堆
      */
     private static void applyCardDamage(DuelTableBlockEntity table, DuelPlayerData owner, int slot,
                                         ItemStack card, int damage) {
         ICard access = ICard.getICardOrNull(card);
-        if (access == null || damage < 0) {
+        if (access == null || damage <= 0) {
             return;
         }
+        // 装备减伤（equip_guard）：伤害 -1，减到 0 视为未受伤
         if (hasEquipSkill(owner, slot, "guard")) {
             damage = Math.max(0, damage - 1);
+            if (damage <= 0) {
+                return;
+            }
+        }
+        // 受到伤害：装备耐久 -1（耐久归零 → 重置进弃牌堆）
+        ItemStack equip = owner.getEquipped()[slot];
+        ICard equipAccess = ICard.getICardOrNull(equip);
+        if (equipAccess != null) {
+            int left = equipAccess.getHP(equip) - 1;
+            if (left <= 0) {
+                owner.getEquipped()[slot] = ItemStack.EMPTY;
+                owner.getDiscard().add(freshCard(equip));
+                broadcast(table, Component.translatable("cardduel.duel.equip_broken"));
+            } else {
+                equipAccess.setHP(equip, left);
+            }
         }
         int newHp = access.getHP(card) - damage;
         if (newHp + equipDurability(owner, slot) <= 0) {
@@ -550,30 +564,6 @@ public final class DuelEngine {
             SkillHooks.onDeath(table, owner, slot, card);
         } else {
             access.setHP(card, newHp);
-        }
-    }
-
-    /**
-     * 受到攻击：装备耐久 -1；耐久归零 → 装备重置后进弃牌堆，召唤物恢复原有属性
-     * （若本体 HP 已 ≤0，失去装备层后立即死亡）。
-     */
-    private static void tickEquipDurability(DuelTableBlockEntity table, DuelPlayerData owner, int slot) {
-        ItemStack equip = owner.getEquipped()[slot];
-        ICard access = ICard.getICardOrNull(equip);
-        if (access == null) {
-            return;
-        }
-        int left = access.getHP(equip) - 1;
-        if (left <= 0) {
-            owner.getEquipped()[slot] = ItemStack.EMPTY;
-            owner.getDiscard().add(freshCard(equip));
-            broadcast(table, Component.translatable("cardduel.duel.equip_broken"));
-            ItemStack card = owner.getBoard()[slot];
-            if (!card.isEmpty()) {
-                applyCardDamage(table, owner, slot, card, 0);
-            }
-        } else {
-            access.setHP(equip, left);
         }
     }
 

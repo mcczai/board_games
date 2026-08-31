@@ -168,8 +168,53 @@
 
 ---
 
-## 7. 待用户敲定的事项
+## 9. 技能系统（数据驱动）方向与难度预估
+
+> 用户 2025 需求：技能做成独立模块，可被**任意类型卡牌**调用；玩家能像添加卡牌一样**添加新机制**。
+> 结论：**框架能力足够（项目已有完整的卡包数据驱动基础设施可复用），但属于 P2 级重构，现不实施**。理由：P1 内建技能已闭环且尚未实测，立即重构会叠加测试盲区；本草案作为 P2 开局第一项。
+
+**难度预估**：中-高。10-15 个文件，`DuelEngine` 大半重构，建议 3 个阶段交付（技能定义→执行器→迁移）。
+
+### 9.1 架构草案
+
+1. **技能资源格式**（与卡包同模式，放资源包 `cards/skills/*.json`）：
+   ```json
+   {
+     "id": "fire_3",
+     "trigger": "on_play_mana",          // 触发时机
+     "effect": "damage_enemy_summon",    // 内建效果类型
+     "params": { "amount": 3, "target": "random" }
+   }
+   ```
+   trigger 枚举：on_summon / on_death / on_attack / on_damaged / on_turn_start / on_turn_end / on_draw / on_play_mana / on_play_secret / on_equip / on_unequip …
+
+2. **SkillRegistry**：加载 + 校验 + 按 trigger 索引（复用 `CommonCardPackLoader`/`CardAssetManager`/POJO 模式）
+
+3. **SkillDispatcher**：引擎各触发点调用 `dispatcher.dispatch(trigger, context)`，遍历相关卡牌（场上/手牌/装备/秘密区）的 skill id → 查表执行 effect
+
+4. **效果分两类**：
+   - **效果型**（直伤/回复/抽牌/法力/buff/耐久…）：纯数据驱动，**玩家加 JSON 即可添加**（组合已有 effect+参数）
+   - **规则型**（嘲讽/冲锋/风怒/减伤/免疫…，改变游戏规则而非一次性效果）：引擎提供规则钩子接口（`canAttack/canTarget/damageModify/isImmune`），钩子也是内建 effect 集合；玩家可组合已有规则，**新规则类型需 Java 扩展**
+
+5. **effect 扩展点**：`DeferredRegister<EffectType>`（NeoForge 注册），其他 mod/开发者可注册全新 effect 类型（供高级自定义机制）
+
+### 9.2 迁移清单（P2 实施时）
+
+- 现有硬编码内建技能全部转为技能 JSON：mana 9 张 + trap 8 张 + equip 机制 5 个（guard/ranged/elytra/trident/taunt）+ thorns/秘密触发条件
+- `DuelEngine` 触发点接 dispatcher：playCard / attack / applyCardDamage / startTurn / endTurn / drawCard / death / summon（约 10 处）
+- 卡数据 `skill` 字段语义不变（存 skill id），技能定义独立于卡牌 JSON
+- 校验：引用不存在的 skill id / 参数越界 → 加载时警告 + 对局中兜底白板
+
+### 9.3 装备规则修订记录（用户 2025 确认）
+
+- 装备 HP 字段**即耐久**，不新增字段
+- 耐久磨损条件：召唤物**受到任意伤害**（攻击/反击/反伤/魔法/陷阱）→ 耐久 -1；guard 减伤减到 0 视为未受伤不磨损
+- 耐久归零 → 装备重置进弃牌堆，召唤物恢复原有属性；召唤物死亡 → 卡与装备均重置数值进弃牌堆（`freshCard` 注册表重建）
+
+---
+
+## 10. 待用户敲定的事项
 
 1. 卡池规模是否合适（37 张 / 2 副牌）；如需更多/更少，指出方向即可
 2. 个别卡的主题与数值是否要调整（如监守者 8 费、不死图腾 6 费是否合理）
-3. 陷阱"秘密"机制 P2 的触发时机优先级（战吼 > 秘密 > 亡语？）——后续设计
+3. 秘密触发的优先级（多秘密同时满足时按放置顺序依次触发，当前实现）——如要改动 P2 再议
