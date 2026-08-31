@@ -1,14 +1,17 @@
 package net.mcczai.cardduel.client.hud;
 
 import net.mcczai.cardduel.CardduelMod;
+import net.mcczai.cardduel.block.entity.DuelTableBlockEntity;
 import net.mcczai.cardduel.client.duel.ClientDuelState;
 import net.mcczai.cardduel.client.duel.DuelCameraManager;
 import net.mcczai.cardduel.client.duel.DuelInteraction;
 import net.mcczai.cardduel.client.duel.HudClickManager;
+import net.mcczai.cardduel.duel.DuelPlayerData;
 import net.mcczai.cardduel.network.payload.ClientboundDuelSyncPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -16,14 +19,14 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 
 /**
- * 对局 HUD：屏幕上方双方状态条（HP/法力/牌库/疲劳）+ 中央回合指示 + 右下"结束回合"按钮。
+ * 对局 HUD：屏幕上方双方状态条（HP/法力/牌库/疲劳/秘密区/装备/图腾）+ 中央回合指示 + 右下"结束回合"按钮。
  */
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(modid = CardduelMod.MODID, value = Dist.CLIENT)
 public class BattleBoardHud {
 
     private static final int BAR_W = 200;
-    private static final int BAR_H = 52;
+    private static final int BAR_H = 64;
     private static final int MARGIN = 8;
 
     @SubscribeEvent
@@ -47,8 +50,18 @@ public class BattleBoardHud {
         String foeName = isHost ? sync.guestName() : sync.hostName();
         boolean myTurn = mc.player.getUUID().equals(sync.activeUuid());
 
-        renderPlayerBar(g, MARGIN, MARGIN, meName, me, sync, myTurn);
-        renderPlayerBar(g, sw - BAR_W - MARGIN, MARGIN, foeName, foe, sync, !myTurn);
+        // 装备数从本地牌桌实体读取（装备为公开信息，随方块实体同步）
+        int meEquip = 0;
+        int foeEquip = 0;
+        if (mc.level != null && mc.level.getBlockEntity(sync.tablePos()) instanceof DuelTableBlockEntity table) {
+            DuelPlayerData myData = isHost ? table.getHostData() : table.getGuestData();
+            DuelPlayerData foeData = isHost ? table.getGuestData() : table.getHostData();
+            meEquip = countEquipped(myData);
+            foeEquip = countEquipped(foeData);
+        }
+
+        renderPlayerBar(g, MARGIN, MARGIN, meName, me, sync, myTurn, meEquip);
+        renderPlayerBar(g, sw - BAR_W - MARGIN, MARGIN, foeName, foe, sync, !myTurn, foeEquip);
 
         String turn = Component.translatable("cardduel.hud.turn", sync.turnNumber()).getString();
         g.drawCenteredString(mc.font, turn, sw / 2, MARGIN + 4, 0xFFFFFFFF);
@@ -59,8 +72,13 @@ public class BattleBoardHud {
                     DuelInteraction.getMulliganSelection().size()).getString();
             g.drawCenteredString(mc.font, hint, sw / 2, MARGIN + 20, 0xFFFFD54F);
         } else if (DuelInteraction.getSelectedHand() >= 0) {
-            g.drawCenteredString(mc.font, Component.translatable("cardduel.hud.selected_hand").getString(),
-                    sw / 2, MARGIN + 20, 0xFF81C784);
+            String hint = switch (String.valueOf(HudClickManager.selectedHandKind())) {
+                case "mana", "secret" -> Component.translatable("cardduel.hud.selected_mana").getString();
+                case "anvil" -> Component.translatable("cardduel.hud.selected_anvil").getString();
+                case "equip" -> Component.translatable("cardduel.hud.selected_equip").getString();
+                default -> Component.translatable("cardduel.hud.selected_hand").getString();
+            };
+            g.drawCenteredString(mc.font, hint, sw / 2, MARGIN + 20, 0xFF81C784);
         } else if (DuelInteraction.getSelectedBoard() >= 0) {
             g.drawCenteredString(mc.font, Component.translatable("cardduel.hud.selected_board").getString(),
                     sw / 2, MARGIN + 20, 0xFFFFD54F);
@@ -69,9 +87,19 @@ public class BattleBoardHud {
         HudClickManager.renderEndTurnButton(g, myTurn, "MULLIGAN".equals(sync.phase()));
     }
 
+    private static int countEquipped(DuelPlayerData data) {
+        int count = 0;
+        for (ItemStack stack : data.getEquipped()) {
+            if (!stack.isEmpty()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     private static void renderPlayerBar(GuiGraphics g, int x, int y, String name,
                                         ClientboundDuelSyncPayload.PlayerSyncView view,
-                                        ClientboundDuelSyncPayload sync, boolean active) {
+                                        ClientboundDuelSyncPayload sync, boolean active, int equipCount) {
         Minecraft mc = Minecraft.getInstance();
         int border = active ? 0xFFFFD54F : 0xFF555555;
         g.fill(x - 1, y - 1, x + BAR_W + 1, y + BAR_H + 1, border);
@@ -87,5 +115,10 @@ public class BattleBoardHud {
         g.drawString(mc.font,
                 Component.translatable("cardduel.hud.deck_fatigue", view.deckCount(), view.fatigue()).getString(),
                 x + 6, y + 40, 0xFFBDBDBD);
+        String extras = Component.translatable("cardduel.hud.trap_equip", view.trapCount(), equipCount).getString();
+        if (view.totemActive()) {
+            extras += " " + Component.translatable("cardduel.hud.totem").getString();
+        }
+        g.drawString(mc.font, extras, x + 6, y + 52, 0xFFCE93D8);
     }
 }

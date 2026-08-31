@@ -4,6 +4,7 @@ import net.mcczai.cardduel.CardduelMod;
 import net.mcczai.cardduel.block.entity.DuelTableBlockEntity;
 import net.mcczai.cardduel.client.hud.DuelHandHud;
 import net.mcczai.cardduel.duel.DuelPlayerData;
+import net.mcczai.cardduel.items.ICard;
 import net.mcczai.cardduel.network.payload.ClientboundDuelSyncPayload;
 import net.mcczai.cardduel.network.payload.ServerboundAttackPayload;
 import net.mcczai.cardduel.network.payload.ServerboundEndTurnPayload;
@@ -15,6 +16,7 @@ import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -119,6 +121,37 @@ public class HudClickManager {
         DuelInteraction.clear();
     }
 
+    /**
+     * 选中手牌的类型（决定点击目标的分支）：
+     * "mana" 魔法 / "equip" 装备 / "secret" 秘密陷阱 / "anvil" 铁砧陷阱 / "summon" 召唤及一切站场兜底。
+     */
+    public static String selectedHandKind() {
+        int index = DuelInteraction.getSelectedHand();
+        if (index < 0 || index >= ClientDuelHand.get().size()) {
+            return null;
+        }
+        ItemStack card = ClientDuelHand.get().get(index);
+        ICard access = ICard.getICardOrNull(card);
+        if (access == null) {
+            return "summon";
+        }
+        String type = access.getType(card);
+        String skill = access.getSkill(card);
+        if ("mana".equals(type)) {
+            return "mana";
+        }
+        if ("equip".equals(type)) {
+            return "equip";
+        }
+        if (skill != null && skill.startsWith("secret_")) {
+            return "secret";
+        }
+        if (skill != null && skill.startsWith("anvil_")) {
+            return "anvil";
+        }
+        return "summon"; // 含 trap thorns / 未知技能兜底
+    }
+
     private static void handleTableClick(Minecraft mc, ClientboundDuelSyncPayload sync, SlotHit hit,
                                          boolean myTurn, boolean mulligan) {
         if (mulligan || !myTurn) {
@@ -131,20 +164,53 @@ public class HudClickManager {
         boolean isHost = mc.player.getUUID().equals(sync.hostUuid());
         DuelPlayerData myData = isHost ? table.getHostData() : table.getGuestData();
         DuelPlayerData foeData = isHost ? table.getGuestData() : table.getHostData();
+        int selectedHand = DuelInteraction.getSelectedHand();
+        String kind = selectedHandKind();
 
         if (hit.hostHalf() == isHost) {
             // 己方半场
-            if (myData.getBoard()[hit.slot()].isEmpty()) {
-                if (DuelInteraction.getSelectedHand() >= 0) {
-                    PacketDistributor.sendToServer(new ServerboundPlayCardPayload(
-                            DuelInteraction.getSelectedHand(), hit.slot()));
+            if (selectedHand >= 0 && kind != null) {
+                switch (kind) {
+                    case "mana", "secret" -> {
+                        // 魔法/秘密：点己方半场任意处打出（不占槽）
+                        PacketDistributor.sendToServer(new ServerboundPlayCardPayload(selectedHand, -1));
+                        DuelInteraction.clear();
+                        return;
+                    }
+                    case "equip" -> {
+                        // 装备：点己方有卡槽附着
+                        if (!myData.getBoard()[hit.slot()].isEmpty()) {
+                            PacketDistributor.sendToServer(new ServerboundPlayCardPayload(selectedHand, hit.slot()));
+                        }
+                        DuelInteraction.clear();
+                        return;
+                    }
+                    default -> {
+                        // 召唤/反伤陷阱/未知：点己方空槽站场
+                        if (myData.getBoard()[hit.slot()].isEmpty()) {
+                            PacketDistributor.sendToServer(new ServerboundPlayCardPayload(selectedHand, hit.slot()));
+                        }
+                        DuelInteraction.clear();
+                        return;
+                    }
                 }
+            }
+            if (myData.getBoard()[hit.slot()].isEmpty()) {
                 DuelInteraction.clear();
             } else {
                 DuelInteraction.toggleBoard(hit.slot());
             }
         } else {
-            // 对方半场：有选中己方卡 → 攻击对方卡或打脸（点空处）
+            // 对方半场
+            if (selectedHand >= 0 && "anvil".equals(kind)) {
+                // 铁砧：点对方召唤物坠落
+                if (!foeData.getBoard()[hit.slot()].isEmpty()) {
+                    PacketDistributor.sendToServer(new ServerboundPlayCardPayload(selectedHand, hit.slot()));
+                }
+                DuelInteraction.clear();
+                return;
+            }
+            // 有选中己方卡 → 攻击对方卡或打脸（点空处）
             if (DuelInteraction.getSelectedBoard() >= 0) {
                 int target = foeData.getBoard()[hit.slot()].isEmpty() ? -1 : hit.slot();
                 PacketDistributor.sendToServer(new ServerboundAttackPayload(

@@ -28,6 +28,10 @@ public class DuelPlayerData {
     private final List<ItemStack> discard = new ArrayList<>();
     /** 战场槽位（固定 7 个，空位为 EMPTY） */
     private final ItemStack[] board = new ItemStack[BOARD_SIZE];
+    /** 每个槽位附着的装备卡（每个召唤物最多 1 件，新装备替换旧装备） */
+    private final ItemStack[] equipped = new ItemStack[BOARD_SIZE];
+    /** 秘密区（陷阱卡，背对对手，上限见 DuelConfig.TRAP_ZONE_LIMIT） */
+    private final List<ItemStack> trapZone = new ArrayList<>();
     /** 每个槽位的召唤回合号（判定召唤失调） */
     private final int[] summonTurn = new int[BOARD_SIZE];
     /** 每个槽位最近一次攻击时的回合号（判定每回合只能攻击一次） */
@@ -45,9 +49,12 @@ public class DuelPlayerData {
     private boolean deckReady;
     /** 是否已完成换牌 */
     private boolean mulliganDone;
+    /** 不死图腾是否生效（抵挡下一次致命伤害并回复 5 生命） */
+    private boolean totemActive;
 
     public DuelPlayerData() {
         Arrays.fill(this.board, ItemStack.EMPTY);
+        Arrays.fill(this.equipped, ItemStack.EMPTY);
     }
 
     // ==================== 集合访问 ====================
@@ -66,6 +73,22 @@ public class DuelPlayerData {
 
     public ItemStack[] getBoard() {
         return board;
+    }
+
+    public ItemStack[] getEquipped() {
+        return equipped;
+    }
+
+    public List<ItemStack> getTrapZone() {
+        return trapZone;
+    }
+
+    public boolean isTotemActive() {
+        return totemActive;
+    }
+
+    public void setTotemActive(boolean totemActive) {
+        this.totemActive = totemActive;
     }
 
     public int[] getSummonTurn() {
@@ -145,7 +168,9 @@ public class DuelPlayerData {
         this.hand.clear();
         this.deck.clear();
         this.discard.clear();
+        this.trapZone.clear();
         Arrays.fill(this.board, ItemStack.EMPTY);
+        Arrays.fill(this.equipped, ItemStack.EMPTY);
         Arrays.fill(this.summonTurn, 0);
         Arrays.fill(this.attackTurn, 0);
         this.hp = 0;
@@ -155,6 +180,7 @@ public class DuelPlayerData {
         this.fatigue = 0;
         this.deckReady = false;
         this.mulliganDone = false;
+        this.totemActive = false;
     }
 
     // ==================== NBT ====================
@@ -162,10 +188,14 @@ public class DuelPlayerData {
     public void save(CompoundTag tag, HolderLookup.Provider provider) {
         savePublic(tag, provider);
         tag.put("Hand", saveStackList(this.hand, provider));
+        // 秘密区内容为隐藏信息：只落盘，不进公开同步包
+        tag.put("Trap", saveStackList(this.trapZone, provider));
+        tag.putBoolean("TotemActive", this.totemActive);
     }
 
     /**
-     * 只写公开数据（不含手牌内容），用于方块实体同步包。
+     * 只写公开数据（不含手牌/陷阱内容），用于方块实体同步包。
+     * 装备为公开信息（对手可见挂载的装备），随 Board 一并公开。
      */
     public void savePublic(CompoundTag tag, HolderLookup.Provider provider) {
         tag.put("Deck", saveStackList(this.deck, provider));
@@ -176,6 +206,13 @@ public class DuelPlayerData {
             boardTag.add(stack.saveOptional(provider));
         }
         tag.put("Board", boardTag);
+
+        ListTag equipTag = new ListTag();
+        for (ItemStack stack : this.equipped) {
+            equipTag.add(stack.saveOptional(provider));
+        }
+        tag.put("Equipped", equipTag);
+
         tag.putIntArray("SummonTurn", this.summonTurn);
         tag.putIntArray("AttackTurn", this.attackTurn);
 
@@ -192,15 +229,24 @@ public class DuelPlayerData {
         this.hand.clear();
         this.deck.clear();
         this.discard.clear();
+        this.trapZone.clear();
         loadStackList(this.hand, tag.getList("Hand", Tag.TAG_COMPOUND), provider);
         loadStackList(this.deck, tag.getList("Deck", Tag.TAG_COMPOUND), provider);
         loadStackList(this.discard, tag.getList("Discard", Tag.TAG_COMPOUND), provider);
+        loadStackList(this.trapZone, tag.getList("Trap", Tag.TAG_COMPOUND), provider);
 
         ListTag boardTag = tag.getList("Board", Tag.TAG_COMPOUND);
         Arrays.fill(this.board, ItemStack.EMPTY);
         for (int i = 0; i < Math.min(boardTag.size(), BOARD_SIZE); i++) {
             ItemStack stack = ItemStack.parseOptional(provider, boardTag.getCompound(i));
             this.board[i] = stack;
+        }
+
+        ListTag equipTag = tag.getList("Equipped", Tag.TAG_COMPOUND);
+        Arrays.fill(this.equipped, ItemStack.EMPTY);
+        for (int i = 0; i < Math.min(equipTag.size(), BOARD_SIZE); i++) {
+            ItemStack stack = ItemStack.parseOptional(provider, equipTag.getCompound(i));
+            this.equipped[i] = stack;
         }
 
         Arrays.fill(this.summonTurn, 0);
@@ -222,6 +268,7 @@ public class DuelPlayerData {
         this.fatigue = tag.getInt("Fatigue");
         this.deckReady = tag.getBoolean("DeckReady");
         this.mulliganDone = tag.getBoolean("MulliganDone");
+        this.totemActive = tag.getBoolean("TotemActive");
     }
 
     private static ListTag saveStackList(List<ItemStack> stacks, HolderLookup.Provider provider) {

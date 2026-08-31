@@ -133,7 +133,7 @@ public record ClientboundDuelSyncPayload(
      * 单个玩家的公开状态视图。
      */
     public record PlayerSyncView(int hp, int mp, int mpMax, int handCount, int deckCount, int fatigue,
-                                 boolean deckReady) {
+                                 boolean deckReady, int trapCount, boolean totemActive) {
 
         public static final StreamCodec<RegistryFriendlyByteBuf, PlayerSyncView> STREAM_CODEC =
                 new StreamCodec<>() {
@@ -142,7 +142,7 @@ public record ClientboundDuelSyncPayload(
                         return new PlayerSyncView(
                                 buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
                                 buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
-                                buf.readBoolean());
+                                buf.readBoolean(), buf.readVarInt(), buf.readBoolean());
                     }
 
                     @Override
@@ -154,6 +154,8 @@ public record ClientboundDuelSyncPayload(
                         buf.writeVarInt(view.deckCount);
                         buf.writeVarInt(view.fatigue);
                         buf.writeBoolean(view.deckReady);
+                        buf.writeVarInt(view.trapCount);
+                        buf.writeBoolean(view.totemActive);
                     }
                 };
 
@@ -161,7 +163,7 @@ public record ClientboundDuelSyncPayload(
             return new PlayerSyncView(
                     data.getHp(), data.getMp(), data.getMpMax(),
                     data.getHand().size(), data.getDeck().size(), data.getFatigue(),
-                    data.isDeckReady());
+                    data.isDeckReady(), data.getTrapZone().size(), data.isTotemActive());
         }
     }
 }

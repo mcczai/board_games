@@ -3,9 +3,11 @@ package net.mcczai.cardduel.client.event;
 import net.mcczai.cardduel.CardduelMod;
 import net.mcczai.cardduel.client.duel.ClientDuelHand;
 import net.mcczai.cardduel.client.duel.ClientDuelState;
+import net.mcczai.cardduel.client.duel.ClientDuelTrap;
 import net.mcczai.cardduel.client.gui.screens.duel.DuelSetupScreen;
 import net.mcczai.cardduel.network.payload.ClientboundDuelHandPayload;
 import net.mcczai.cardduel.network.payload.ClientboundDuelSyncPayload;
+import net.mcczai.cardduel.network.payload.ClientboundDuelTrapPayload;
 import net.mcczai.cardduel.network.payload.ClientboundOpenSetupPayload;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
@@ -28,7 +30,9 @@ public class ClientPayloadHandlers {
                 .playToClient(ClientboundDuelSyncPayload.TYPE, ClientboundDuelSyncPayload.STREAM_CODEC,
                         ClientPayloadHandlers::handleDuelSync)
                 .playToClient(ClientboundDuelHandPayload.TYPE, ClientboundDuelHandPayload.STREAM_CODEC,
-                        ClientPayloadHandlers::handleDuelHand);
+                        ClientPayloadHandlers::handleDuelHand)
+                .playToClient(ClientboundDuelTrapPayload.TYPE, ClientboundDuelTrapPayload.STREAM_CODEC,
+                        ClientPayloadHandlers::handleDuelTrap);
     }
 
     private static void handleOpenSetup(ClientboundOpenSetupPayload payload, IPayloadContext context) {
@@ -41,5 +45,9 @@ public class ClientPayloadHandlers {
 
     private static void handleDuelHand(ClientboundDuelHandPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> ClientDuelHand.update(payload.hand()));
+    }
+
+    private static void handleDuelTrap(ClientboundDuelTrapPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> ClientDuelTrap.update(payload.traps()));
     }
 }

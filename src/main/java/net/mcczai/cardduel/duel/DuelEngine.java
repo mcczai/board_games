@@ -2,11 +2,13 @@ package net.mcczai.cardduel.duel;
 
 import net.mcczai.cardduel.API.item.nbt.CardDataAccessor;
 import net.mcczai.cardduel.block.entity.DuelTableBlockEntity;
+import net.mcczai.cardduel.config.DuelConfig;
 import net.mcczai.cardduel.init.ModAttachments;
 import net.mcczai.cardduel.init.ModItem;
 import net.mcczai.cardduel.items.ICard;
 import net.mcczai.cardduel.network.payload.ClientboundDuelHandPayload;
 import net.mcczai.cardduel.network.payload.ClientboundDuelSyncPayload;
+import net.mcczai.cardduel.network.payload.ClientboundDuelTrapPayload;
 import net.mcczai.cardduel.network.payload.ClientboundOpenSetupPayload;
 import net.mcczai.cardduel.resources.DefaultAssets;
 import net.mcczai.cardduel.skill.SkillHooks;
@@ -226,6 +228,7 @@ public final class DuelEngine {
             return;
         }
         DuelPlayerData active = activeData(table);
+        DuelPlayerData foe = foeData(table, active);
         table.setTurnNumber(table.getTurnNumber() + 1);
         active.setTurnCount(active.getTurnCount() + 1);
 
@@ -234,7 +237,10 @@ public final class DuelEngine {
         active.setMp(mpMax);
 
         SkillHooks.onTurnStart(table, active);
-        drawCard(table, active, playerName(table, activeUuid));
+        // 对手秘密区：secret_sculk → 本回合跳过抽牌
+        if (!checkSecretsOnTurnStart(table, active, foe)) {
+            drawCard(table, active, playerName(table, activeUuid));
+        }
 
         broadcast(table, Component.translatable("cardduel.duel.turn_start",
                 table.getTurnNumber(), playerName(table, activeUuid), active.getMp(), active.getMpMax()));
@@ -288,10 +294,17 @@ public final class DuelEngine {
     }
 
     /**
-     * 对玩家造成伤害并判定胜负。
+     * 对玩家造成伤害并判定胜负。不死图腾生效时抵挡致命伤害：生命置为 5（不超上限）并消耗图腾。
      */
     public static void dealPlayerDamage(DuelTableBlockEntity table, DuelPlayerData target, int amount) {
         if (target.getHp() <= 0) {
+            return;
+        }
+        if (target.isTotemActive() && target.getHp() - amount <= 0) {
+            target.setTotemActive(false);
+            target.setHp(Math.min(5, table.getHpCap()));
+            broadcast(table, Component.translatable("cardduel.duel.totem_saved", dataName(table, target)));
+            syncToPlayers(table);
             return;
         }
         target.setHp(target.getHp() - amount);
@@ -332,7 +345,12 @@ public final class DuelEngine {
     // ==================== 出牌 / 攻击 ====================
 
     /**
-     * 打出手牌到己方战场槽位。
+     * 打出手牌：按卡牌类型走不同结算路径。
+     *  - summon：占己方战场槽（召唤失调、可攻击）
+     *  - mana：立即结算内建效果 → 进弃牌堆（不占槽，boardSlot 传 -1）
+     *  - trap：secret_* → 秘密区；anvil_* → 立即对敌方召唤物伤害（boardSlot=敌方槽）；其余（thorns/未知）→ 占槽站场
+     *  - equip：附着到己方召唤物（每槽 1 件，新装备替换旧装备）
+     * 未知技能一律按召唤卡站场兜底（兼容旧卡）。
      */
     public static boolean playCard(ServerPlayer player, DuelTableBlockEntity table, int handIndex, int boardSlot) {
         if (table.getPhase() != DuelPhase.PLAYING) {
@@ -346,12 +364,6 @@ public final class DuelEngine {
         if (handIndex < 0 || handIndex >= data.getHand().size()) {
             return false;
         }
-        if (boardSlot < 0 || boardSlot >= DuelPlayerData.BOARD_SIZE) {
-            return false;
-        }
-        if (!data.getBoard()[boardSlot].isEmpty()) {
-            return false;
-        }
 
         ItemStack card = data.getHand().remove(handIndex);
         ICard iCard = ICard.getICardOrNull(card);
@@ -360,9 +372,13 @@ public final class DuelEngine {
             return false;
         }
 
+        DuelPlayerData foe = foeData(table, data);
+
         // 硬币卡：本回合 +1 法力并消失（不占槽、不耗 MP）
         if (DefaultAssets.COIN_CARD_ID.equals(iCard.getCardId(card))) {
             data.setMp(Math.min(data.getMpMax(), data.getMp() + 1));
+            checkSecretsOnPlay(table, data, foe, card, -1);
+            table.sync();
             syncToPlayers(table);
             broadcast(table, Component.translatable("cardduel.duel.coin_used",
                     playerName(table, player.getUUID())));
@@ -376,10 +392,23 @@ public final class DuelEngine {
             return false;
         }
 
+        String type = iCard.getType(card);
+        String skill = iCard.getSkill(card);
+        boolean ok;
+        switch (type) {
+            case "mana" -> ok = playMana(table, data, foe, card, skill);
+            case "trap" -> ok = playTrap(table, data, foe, card, skill, boardSlot, player);
+            case "equip" -> ok = playEquip(table, data, card, boardSlot, player);
+            default -> ok = placeOnBoard(table, data, card, boardSlot);
+        }
+
+        if (!ok) {
+            data.getHand().add(handIndex, card);
+            return false;
+        }
+
         data.setMp(data.getMp() - cost);
-        data.getBoard()[boardSlot] = card;
-        data.getSummonTurn()[boardSlot] = data.getTurnCount();
-        SkillHooks.onSummoned(table, data, boardSlot, card);
+        checkSecretsOnPlay(table, data, foe, card, findBoardSlot(data, card));
         table.sync();
         syncToPlayers(table);
         broadcast(table, Component.translatable("cardduel.duel.card_played",
@@ -408,6 +437,15 @@ public final class DuelEngine {
         if (attackerAccess == null) {
             return false;
         }
+        // 反伤类陷阱（仙人掌/岩浆块）不能主动攻击
+        if (isThorns(attackerAccess.getSkill(attackerCard))) {
+            player.displayClientMessage(Component.translatable("cardduel.duel.thorns_cant_attack"), false);
+            return false;
+        }
+        if (targetSlot >= DuelPlayerData.BOARD_SIZE) {
+            return false;
+        }
+
         int turnCount = attackerData.getTurnCount();
         if (attackerData.getSummonTurn()[attackerSlot] == turnCount) {
             player.displayClientMessage(Component.translatable("cardduel.duel.summon_sickness"), false);
@@ -418,39 +456,69 @@ public final class DuelEngine {
             return false;
         }
 
-        int atk = attackerAccess.getATK(attackerCard);
+        // 有效攻击力 = 卡面攻击 + 装备加成
+        int atk = attackerAccess.getATK(attackerCard) + equipAtk(attackerData, attackerSlot);
 
         if (targetSlot < 0) {
             // 打脸
             attackerData.getAttackTurn()[attackerSlot] = turnCount;
             dealPlayerDamage(table, targetData, atk);
         } else {
-            if (targetSlot >= DuelPlayerData.BOARD_SIZE) {
-                return false;
-            }
             ItemStack targetCard = targetData.getBoard()[targetSlot];
             ICard targetAccess = ICard.getICardOrNull(targetCard);
             if (targetAccess == null) {
                 return false;
             }
             attackerData.getAttackTurn()[attackerSlot] = turnCount;
+            boolean targetThorns = isThorns(targetAccess.getSkill(targetCard));
             SkillHooks.onAttack(table, attackerData, attackerSlot, attackerCard,
                     targetData, targetSlot, targetCard);
             applyCardDamage(table, targetData, targetSlot, targetCard, atk);
-            applyCardDamage(table, attackerData, attackerSlot, attackerCard, targetAccess.getATK(targetCard));
+            // 炉石式互伤（目标已死亡则无反击）
+            if (attackerData.getBoard()[attackerSlot] == attackerCard
+                    && targetData.getBoard()[targetSlot] == targetCard) {
+                int counterAtk = targetAccess.getATK(targetCard) + equipAtk(targetData, targetSlot);
+                applyCardDamage(table, attackerData, attackerSlot, attackerCard, counterAtk);
+            }
+            // 反伤（接触伤害：无论目标是否死亡，攻击方都受 1 点伤害）
+            if (targetThorns && attackerData.getBoard()[attackerSlot] == attackerCard) {
+                broadcast(table, Component.translatable("cardduel.duel.thorns_reflect"));
+                applyCardDamage(table, attackerData, attackerSlot, attackerCard, 1);
+            }
         }
+        // 防守方秘密区：secret_wither（对方攻击时，攻击方受 2 伤）
+        checkSecretsOnAttack(table, attackerData, targetData, attackerCard, attackerSlot);
+
         table.sync();
         syncToPlayers(table);
         return true;
     }
 
     /**
-     * 对战场卡牌造成伤害：HP ≤ 0 则清槽并进弃牌堆。
+     * 对战场卡牌造成伤害：装备耐久先吸收（MC 护甲/耐久设定），本体 HP ≤ 0 则清槽并进弃牌堆（连带装备）。
      */
     private static void applyCardDamage(DuelTableBlockEntity table, DuelPlayerData owner, int slot,
                                         ItemStack card, int damage) {
         ICard access = ICard.getICardOrNull(card);
-        if (access == null) {
+        if (access == null || damage <= 0) {
+            return;
+        }
+        ItemStack equip = owner.getEquipped()[slot];
+        ICard equipAccess = ICard.getICardOrNull(equip);
+        if (equipAccess != null) {
+            int equipHp = equipAccess.getHP(equip);
+            int absorbed = Math.min(equipHp, damage);
+            int left = equipHp - absorbed;
+            damage -= absorbed;
+            if (left <= 0) {
+                owner.getEquipped()[slot] = ItemStack.EMPTY;
+                owner.getDiscard().add(equip);
+                broadcast(table, Component.translatable("cardduel.duel.equip_broken"));
+            } else {
+                equipAccess.setHP(equip, left);
+            }
+        }
+        if (damage <= 0) {
             return;
         }
         int newHp = access.getHP(card) - damage;
@@ -458,10 +526,313 @@ public final class DuelEngine {
             owner.getBoard()[slot] = ItemStack.EMPTY;
             owner.getSummonTurn()[slot] = 0;
             owner.getAttackTurn()[slot] = 0;
+            ItemStack deadEquip = owner.getEquipped()[slot];
+            if (!deadEquip.isEmpty()) {
+                owner.getDiscard().add(deadEquip);
+                owner.getEquipped()[slot] = ItemStack.EMPTY;
+            }
             owner.getDiscard().add(card);
             SkillHooks.onDeath(table, owner, slot, card);
         } else {
             access.setHP(card, newHp);
+        }
+    }
+
+    // ==================== 四类结算：魔法 / 陷阱 / 装备 ====================
+
+    /**
+     * 魔法卡：打出后立即结算内建效果并进弃牌堆（不占槽）。
+     * 内建效果集（P1 最小集，P2 由 SkillRegistry 取代）：
+     * heal_N 回血 / harm_N 打对方玩家 / fire_N 随机敌方召唤物 / lava_N 随机敌方单位 /
+     * draw_N 抽牌 / mana_N 本回合加法力 / golden_heal 回5+抽1 / pearl_strike 随机召唤物受 atk 伤 /
+     * totem_protect 免死一次。未知技能 → 无效果直接进弃牌堆。
+     */
+    private static boolean playMana(DuelTableBlockEntity table, DuelPlayerData data, DuelPlayerData foe,
+                                    ItemStack card, String skill) {
+        ICard access = ICard.getICardOrNull(card);
+        data.getDiscard().add(card);
+        String name = dataName(table, data);
+        if (skill.startsWith("heal_")) {
+            int amount = skillAmount(skill, "heal_");
+            data.setHp(Math.min(table.getHpCap(), data.getHp() + amount));
+            broadcast(table, Component.translatable("cardduel.duel.mana_heal", name, amount));
+        } else if (skill.startsWith("harm_")) {
+            int amount = skillAmount(skill, "harm_");
+            dealPlayerDamage(table, foe, amount);
+        } else if (skill.startsWith("fire_")) {
+            int amount = skillAmount(skill, "fire_");
+            damageRandomEnemySummon(table, foe, amount);
+        } else if (skill.startsWith("lava_")) {
+            int amount = skillAmount(skill, "lava_");
+            damageRandomEnemyUnit(table, foe, amount);
+        } else if (skill.startsWith("draw_")) {
+            int amount = skillAmount(skill, "draw_");
+            for (int i = 0; i < amount; i++) {
+                drawCard(table, data, name);
+            }
+        } else if (skill.startsWith("mana_")) {
+            int amount = skillAmount(skill, "mana_");
+            data.setMp(Math.min(data.getMpMax(), data.getMp() + amount));
+            broadcast(table, Component.translatable("cardduel.duel.mana_gain", name, amount));
+        } else if ("golden_heal".equals(skill)) {
+            data.setHp(Math.min(table.getHpCap(), data.getHp() + 5));
+            drawCard(table, data, name);
+            broadcast(table, Component.translatable("cardduel.duel.mana_heal", name, 5));
+        } else if ("pearl_strike".equals(skill)) {
+            int amount = access != null ? access.getATK(card) : 1;
+            damageRandomEnemySummon(table, foe, amount);
+        } else if ("totem_protect".equals(skill)) {
+            data.setTotemActive(true);
+            broadcast(table, Component.translatable("cardduel.duel.totem_set", name));
+        } else {
+            broadcast(table, Component.translatable("cardduel.duel.mana_used", name));
+        }
+        return true;
+    }
+
+    /**
+     * 陷阱卡：secret_* → 秘密区；anvil_N → 立即对敌方召唤物 N 伤；其余（thorns/未知）→ 占槽站场。
+     */
+    private static boolean playTrap(DuelTableBlockEntity table, DuelPlayerData data, DuelPlayerData foe,
+                                    ItemStack card, String skill, int boardSlot, ServerPlayer player) {
+        if (skill.startsWith("secret_")) {
+            int limit = DuelConfig.TRAP_ZONE_LIMIT.get();
+            if (data.getTrapZone().size() >= limit) {
+                player.displayClientMessage(Component.translatable("cardduel.duel.trap_full", limit), false);
+                return false;
+            }
+            data.getTrapZone().add(card);
+            player.displayClientMessage(Component.translatable("cardduel.duel.secret_placed"), false);
+            return true;
+        }
+        if (skill.startsWith("anvil_")) {
+            if (boardSlot < 0 || boardSlot >= DuelPlayerData.BOARD_SIZE || foe.getBoard()[boardSlot].isEmpty()) {
+                player.displayClientMessage(Component.translatable("cardduel.duel.anvil_need_target"), false);
+                return false;
+            }
+            int amount = skillAmount(skill, "anvil_");
+            applyCardDamage(table, foe, boardSlot, foe.getBoard()[boardSlot], amount);
+            data.getDiscard().add(card);
+            broadcast(table, Component.translatable("cardduel.duel.anvil_dropped", amount));
+            return true;
+        }
+        // thorns / 未知技能：占槽站场兜底
+        return placeOnBoard(table, data, card, boardSlot);
+    }
+
+    /**
+     * 装备卡：附着到己方召唤物（每槽 1 件，新装备替换旧装备，旧装备进弃牌堆）。
+     * 装备的 atk 提供攻击加成（attack 时累加），hp 作为耐久先吸收伤害（applyCardDamage）。
+     */
+    private static boolean playEquip(DuelTableBlockEntity table, DuelPlayerData data, ItemStack card,
+                                     int boardSlot, ServerPlayer player) {
+        if (boardSlot < 0 || boardSlot >= DuelPlayerData.BOARD_SIZE || data.getBoard()[boardSlot].isEmpty()) {
+            player.displayClientMessage(Component.translatable("cardduel.duel.equip_need_target"), false);
+            return false;
+        }
+        ItemStack old = data.getEquipped()[boardSlot];
+        if (!old.isEmpty()) {
+            data.getDiscard().add(old);
+            broadcast(table, Component.translatable("cardduel.duel.equip_replaced",
+                    playerName(table, player.getUUID())));
+        }
+        data.getEquipped()[boardSlot] = card;
+        broadcast(table, Component.translatable("cardduel.duel.equip_attached",
+                playerName(table, player.getUUID())));
+        return true;
+    }
+
+    /**
+     * 召唤类（及一切站场兜底）占槽。
+     */
+    private static boolean placeOnBoard(DuelTableBlockEntity table, DuelPlayerData data, ItemStack card,
+                                        int boardSlot) {
+        if (boardSlot < 0 || boardSlot >= DuelPlayerData.BOARD_SIZE || !data.getBoard()[boardSlot].isEmpty()) {
+            return false;
+        }
+        data.getBoard()[boardSlot] = card;
+        data.getSummonTurn()[boardSlot] = data.getTurnCount();
+        SkillHooks.onSummoned(table, data, boardSlot, card);
+        return true;
+    }
+
+    // ==================== 秘密区触发 ====================
+
+    /**
+     * 因 actor 打出牌而检查陷阱主人（trapOwner）的秘密区。
+     * placedSlot 由引用查找：-1 = 未站场（魔法/秘密/硬币），≥0 = actor 刚放置的战场槽。
+     */
+    private static void checkSecretsOnPlay(DuelTableBlockEntity table, DuelPlayerData actor, DuelPlayerData trapOwner,
+                                           ItemStack card, int placedSlot) {
+        for (ItemStack trap : new ArrayList<>(trapOwner.getTrapZone())) {
+            if (table.getPhase() != DuelPhase.PLAYING) {
+                break;
+            }
+            ICard access = ICard.getICardOrNull(trap);
+            if (access == null) {
+                continue;
+            }
+            String skill = access.getSkill(trap);
+            boolean triggered = false;
+            if ("secret_mine".equals(skill)) {
+                dealPlayerDamage(table, actor, 2);
+                triggered = true;
+            } else if ("secret_arrow".equals(skill) && placedSlot >= 0) {
+                ItemStack placed = actor.getBoard()[placedSlot];
+                if (!placed.isEmpty()) {
+                    applyCardDamage(table, actor, placedSlot, placed, 3);
+                    triggered = true;
+                }
+            } else if ("secret_tnt".equals(skill) && countBoard(actor) >= 3) {
+                damageAllCreatures(table, actor, 3);
+                damageAllCreatures(table, trapOwner, 3);
+                triggered = true;
+            }
+            if (triggered) {
+                trapOwner.getTrapZone().remove(trap);
+                trapOwner.getDiscard().add(trap);
+                broadcast(table, Component.translatable("cardduel.duel.secret_triggered",
+                        dataName(table, trapOwner)));
+            }
+        }
+    }
+
+    /**
+     * 因 attacker 的召唤物发起攻击而检查防守方秘密区：secret_wither → 攻击方受 2 伤。
+     */
+    private static void checkSecretsOnAttack(DuelTableBlockEntity table, DuelPlayerData attacker,
+                                             DuelPlayerData defender, ItemStack attackerCard, int attackerSlot) {
+        for (ItemStack trap : new ArrayList<>(defender.getTrapZone())) {
+            if (table.getPhase() != DuelPhase.PLAYING) {
+                break;
+            }
+            ICard access = ICard.getICardOrNull(trap);
+            if (access == null) {
+                continue;
+            }
+            if ("secret_wither".equals(access.getSkill(trap))) {
+                defender.getTrapZone().remove(trap);
+                defender.getDiscard().add(trap);
+                broadcast(table, Component.translatable("cardduel.duel.secret_triggered",
+                        dataName(table, defender)));
+                if (attacker.getBoard()[attackerSlot] == attackerCard) {
+                    applyCardDamage(table, attacker, attackerSlot, attackerCard, 2);
+                }
+            }
+        }
+    }
+
+    /**
+     * 回合开始时检查对手秘密区：secret_sculk → 本回合跳过抽牌。返回是否触发。
+     */
+    private static boolean checkSecretsOnTurnStart(DuelTableBlockEntity table, DuelPlayerData active,
+                                                   DuelPlayerData foe) {
+        for (ItemStack trap : new ArrayList<>(foe.getTrapZone())) {
+            ICard access = ICard.getICardOrNull(trap);
+            if (access == null) {
+                continue;
+            }
+            if ("secret_sculk".equals(access.getSkill(trap))) {
+                foe.getTrapZone().remove(trap);
+                foe.getDiscard().add(trap);
+                broadcast(table, Component.translatable("cardduel.duel.secret_triggered",
+                        dataName(table, foe)));
+                broadcast(table, Component.translatable("cardduel.duel.skip_draw", dataName(table, active)));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // ==================== 内建工具 ====================
+
+    private static DuelPlayerData foeData(DuelTableBlockEntity table, DuelPlayerData data) {
+        return data == table.getHostData() ? table.getGuestData() : table.getHostData();
+    }
+
+    private static String dataName(DuelTableBlockEntity table, DuelPlayerData data) {
+        return playerName(table, data == table.getHostData() ? table.getHostUuid() : table.getGuestUuid());
+    }
+
+    private static int skillAmount(String skill, String prefix) {
+        try {
+            return Math.max(1, Integer.parseInt(skill.substring(prefix.length())));
+        } catch (RuntimeException e) {
+            return 1;
+        }
+    }
+
+    private static boolean isThorns(String skill) {
+        return skill != null && skill.contains("thorns");
+    }
+
+    private static int equipAtk(DuelPlayerData data, int slot) {
+        ItemStack equip = data.getEquipped()[slot];
+        ICard access = ICard.getICardOrNull(equip);
+        return access != null ? access.getATK(equip) : 0;
+    }
+
+    private static int countBoard(DuelPlayerData data) {
+        int count = 0;
+        for (ItemStack stack : data.getBoard()) {
+            if (!stack.isEmpty()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * 按引用查找 card 在战场上的槽位（刚放置的卡即同一引用），未站场返回 -1。
+     */
+    private static int findBoardSlot(DuelPlayerData data, ItemStack card) {
+        ItemStack[] board = data.getBoard();
+        for (int i = 0; i < board.length; i++) {
+            if (board[i] == card) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static void damageAllCreatures(DuelTableBlockEntity table, DuelPlayerData owner, int damage) {
+        ItemStack[] board = owner.getBoard();
+        for (int i = 0; i < board.length; i++) {
+            if (!board[i].isEmpty()) {
+                applyCardDamage(table, owner, i, board[i], damage);
+            }
+        }
+    }
+
+    private static void damageRandomEnemySummon(DuelTableBlockEntity table, DuelPlayerData foe, int amount) {
+        List<Integer> slots = new ArrayList<>();
+        ItemStack[] board = foe.getBoard();
+        for (int i = 0; i < board.length; i++) {
+            if (!board[i].isEmpty()) {
+                slots.add(i);
+            }
+        }
+        if (slots.isEmpty()) {
+            dealPlayerDamage(table, foe, amount); // 无召唤物时兜底打玩家
+            return;
+        }
+        int slot = slots.get(table.getLevel().random.nextInt(slots.size()));
+        applyCardDamage(table, foe, slot, board[slot], amount);
+    }
+
+    private static void damageRandomEnemyUnit(DuelTableBlockEntity table, DuelPlayerData foe, int amount) {
+        List<Integer> slots = new ArrayList<>();
+        ItemStack[] board = foe.getBoard();
+        for (int i = 0; i < board.length; i++) {
+            if (!board[i].isEmpty()) {
+                slots.add(i);
+            }
+        }
+        if (slots.isEmpty() || table.getLevel().random.nextBoolean()) {
+            dealPlayerDamage(table, foe, amount);
+        } else {
+            int slot = slots.get(table.getLevel().random.nextInt(slots.size()));
+            applyCardDamage(table, foe, slot, board[slot], amount);
         }
     }
 
@@ -541,6 +912,8 @@ public final class DuelEngine {
             if (player != null) {
                 PacketDistributor.sendToPlayer(player, payload);
                 PacketDistributor.sendToPlayer(player, new ClientboundDuelHandPayload(datas[i].getHand()));
+                PacketDistributor.sendToPlayer(player,
+                        new ClientboundDuelTrapPayload(new ArrayList<>(datas[i].getTrapZone())));
             }
         }
     }

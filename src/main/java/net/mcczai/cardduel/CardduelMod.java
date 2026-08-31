@@ -2,6 +2,7 @@ package net.mcczai.cardduel;
 
 import net.mcczai.cardduel.API.resource.ResourceManager;
 import net.mcczai.cardduel.config.CommonConfig;
+import net.mcczai.cardduel.config.DuelConfig;
 import net.mcczai.cardduel.init.*;
 import net.mcczai.cardduel.network.DuelNet;
 import net.neoforged.bus.api.IEventBus;
@@ -23,6 +24,7 @@ public class CardduelMod {
     public CardduelMod(IEventBus bus, ModContainer modContainer){
 
         modContainer.registerConfig(ModConfig.Type.COMMON,CommonConfig.init());
+        modContainer.registerConfig(ModConfig.Type.SERVER, DuelConfig.init());
 
         ModBlocks.BLOCKS.register(bus);
         ModItem.ITEMS.register(bus);
