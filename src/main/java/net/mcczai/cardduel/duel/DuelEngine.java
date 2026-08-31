@@ -1,16 +1,19 @@
 package net.mcczai.cardduel.duel;
 
+import net.mcczai.cardduel.API.CdAPI;
 import net.mcczai.cardduel.API.item.nbt.CardDataAccessor;
 import net.mcczai.cardduel.block.entity.DuelTableBlockEntity;
 import net.mcczai.cardduel.config.DuelConfig;
 import net.mcczai.cardduel.init.ModAttachments;
 import net.mcczai.cardduel.init.ModItem;
 import net.mcczai.cardduel.items.ICard;
+import net.mcczai.cardduel.items.builder.CardItemBuilder;
 import net.mcczai.cardduel.network.payload.ClientboundDuelHandPayload;
 import net.mcczai.cardduel.network.payload.ClientboundDuelSyncPayload;
 import net.mcczai.cardduel.network.payload.ClientboundDuelTrapPayload;
 import net.mcczai.cardduel.network.payload.ClientboundOpenSetupPayload;
 import net.mcczai.cardduel.resources.DefaultAssets;
+import net.mcczai.cardduel.resources.pojo.CardDataPOJO;
 import net.mcczai.cardduel.skill.SkillHooks;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -418,6 +421,9 @@ public final class DuelEngine {
 
     /**
      * 己方召唤卡攻击：targetSlot >= 0 打对方召唤卡（炉石式互伤），-1 打脸。
+     * 装备机制：equip_elytra 冲锋（无视召唤失调）/ equip_trident 风怒（每回合两次）/
+     * equip_ranged 远程（不受反击）/ equip_taunt 嘲讽（对方必须先攻击嘲讽单位）。
+     * 装备耐久：每次"受到攻击"（主攻击/反击/反伤）耐久 -1。
      */
     public static boolean attack(ServerPlayer player, DuelTableBlockEntity table, int attackerSlot, int targetSlot) {
         if (table.getPhase() != DuelPhase.PLAYING) {
@@ -446,43 +452,64 @@ public final class DuelEngine {
             return false;
         }
 
+        // 目标有效性前置校验（攻击未发生时不得消耗攻击次数）
+        ItemStack targetCard = ItemStack.EMPTY;
+        ICard targetAccess = null;
+        if (targetSlot >= 0) {
+            targetCard = targetData.getBoard()[targetSlot];
+            targetAccess = ICard.getICardOrNull(targetCard);
+            if (targetAccess == null) {
+                return false;
+            }
+        }
+
         int turnCount = attackerData.getTurnCount();
-        if (attackerData.getSummonTurn()[attackerSlot] == turnCount) {
+        boolean charge = hasEquipSkill(attackerData, attackerSlot, "elytra");
+        if (!charge && attackerData.getSummonTurn()[attackerSlot] == turnCount) {
             player.displayClientMessage(Component.translatable("cardduel.duel.summon_sickness"), false);
             return false;
         }
-        if (attackerData.getAttackTurn()[attackerSlot] == turnCount) {
+        int attackTurn = attackerData.getAttackTurn()[attackerSlot];
+        boolean windfury = hasEquipSkill(attackerData, attackerSlot, "trident");
+        if (attackTurn == turnCount || (attackTurn == turnCount + 1 && !windfury)) {
             player.displayClientMessage(Component.translatable("cardduel.duel.already_attacked"), false);
+            return false;
+        }
+
+        // 嘲讽：对方有嘲讽单位时，只能攻击嘲讽单位（不可打脸）
+        if (hasTaunt(targetData) && (targetSlot < 0 || !hasEquipSkill(targetData, targetSlot, "taunt"))) {
+            player.displayClientMessage(Component.translatable("cardduel.duel.taunt_block"), false);
             return false;
         }
 
         // 有效攻击力 = 卡面攻击 + 装备加成
         int atk = attackerAccess.getATK(attackerCard) + equipAtk(attackerData, attackerSlot);
+        // 攻击次数标记：风怒第一次攻击记 turnCount+1，第二次记 turnCount（回合结束后自然失效）
+        attackerData.getAttackTurn()[attackerSlot] =
+                (windfury && attackTurn != turnCount + 1) ? turnCount + 1 : turnCount;
 
         if (targetSlot < 0) {
             // 打脸
-            attackerData.getAttackTurn()[attackerSlot] = turnCount;
             dealPlayerDamage(table, targetData, atk);
         } else {
-            ItemStack targetCard = targetData.getBoard()[targetSlot];
-            ICard targetAccess = ICard.getICardOrNull(targetCard);
-            if (targetAccess == null) {
-                return false;
-            }
-            attackerData.getAttackTurn()[attackerSlot] = turnCount;
             boolean targetThorns = isThorns(targetAccess.getSkill(targetCard));
             SkillHooks.onAttack(table, attackerData, attackerSlot, attackerCard,
                     targetData, targetSlot, targetCard);
+            // 主攻击：目标装备耐久 -1，再结算伤害
+            tickEquipDurability(table, targetData, targetSlot);
             applyCardDamage(table, targetData, targetSlot, targetCard, atk);
-            // 炉石式互伤（目标已死亡则无反击）
-            if (attackerData.getBoard()[attackerSlot] == attackerCard
+            // 炉石式互伤（目标已死亡或攻击方为远程则无反击）
+            if (!hasEquipSkill(attackerData, attackerSlot, "ranged")
+                    && attackerData.getBoard()[attackerSlot] == attackerCard
                     && targetData.getBoard()[targetSlot] == targetCard) {
+                tickEquipDurability(table, attackerData, attackerSlot);
                 int counterAtk = targetAccess.getATK(targetCard) + equipAtk(targetData, targetSlot);
                 applyCardDamage(table, attackerData, attackerSlot, attackerCard, counterAtk);
             }
             // 反伤（接触伤害：无论目标是否死亡，攻击方都受 1 点伤害）
             if (targetThorns && attackerData.getBoard()[attackerSlot] == attackerCard) {
                 broadcast(table, Component.translatable("cardduel.duel.thorns_reflect"));
+                tickEquipDurability(table, attackerData, attackerSlot);
                 applyCardDamage(table, attackerData, attackerSlot, attackerCard, 1);
             }
         }
@@ -495,46 +522,58 @@ public final class DuelEngine {
     }
 
     /**
-     * 对战场卡牌造成伤害：装备耐久先吸收（MC 护甲/耐久设定），本体 HP ≤ 0 则清槽并进弃牌堆（连带装备）。
+     * 对战场卡牌造成伤害（直接扣本体 HP；装备层计入存活判定）。
+     * 魔法/陷阱伤害不磨损装备耐久——耐久只在"受到攻击"时 -1（tickEquipDurability）。
+     * equip_guard 减伤：受击伤害 -1。
+     * 本体 HP + 装备层 ≤ 0 → 清槽，卡与装备均重置数值后进弃牌堆。
      */
     private static void applyCardDamage(DuelTableBlockEntity table, DuelPlayerData owner, int slot,
                                         ItemStack card, int damage) {
         ICard access = ICard.getICardOrNull(card);
-        if (access == null || damage <= 0) {
+        if (access == null || damage < 0) {
             return;
         }
-        ItemStack equip = owner.getEquipped()[slot];
-        ICard equipAccess = ICard.getICardOrNull(equip);
-        if (equipAccess != null) {
-            int equipHp = equipAccess.getHP(equip);
-            int absorbed = Math.min(equipHp, damage);
-            int left = equipHp - absorbed;
-            damage -= absorbed;
-            if (left <= 0) {
-                owner.getEquipped()[slot] = ItemStack.EMPTY;
-                owner.getDiscard().add(equip);
-                broadcast(table, Component.translatable("cardduel.duel.equip_broken"));
-            } else {
-                equipAccess.setHP(equip, left);
-            }
-        }
-        if (damage <= 0) {
-            return;
+        if (hasEquipSkill(owner, slot, "guard")) {
+            damage = Math.max(0, damage - 1);
         }
         int newHp = access.getHP(card) - damage;
-        if (newHp <= 0) {
+        if (newHp + equipDurability(owner, slot) <= 0) {
             owner.getBoard()[slot] = ItemStack.EMPTY;
             owner.getSummonTurn()[slot] = 0;
             owner.getAttackTurn()[slot] = 0;
             ItemStack deadEquip = owner.getEquipped()[slot];
             if (!deadEquip.isEmpty()) {
-                owner.getDiscard().add(deadEquip);
+                owner.getDiscard().add(freshCard(deadEquip));
                 owner.getEquipped()[slot] = ItemStack.EMPTY;
             }
-            owner.getDiscard().add(card);
+            owner.getDiscard().add(freshCard(card));
             SkillHooks.onDeath(table, owner, slot, card);
         } else {
             access.setHP(card, newHp);
+        }
+    }
+
+    /**
+     * 受到攻击：装备耐久 -1；耐久归零 → 装备重置后进弃牌堆，召唤物恢复原有属性
+     * （若本体 HP 已 ≤0，失去装备层后立即死亡）。
+     */
+    private static void tickEquipDurability(DuelTableBlockEntity table, DuelPlayerData owner, int slot) {
+        ItemStack equip = owner.getEquipped()[slot];
+        ICard access = ICard.getICardOrNull(equip);
+        if (access == null) {
+            return;
+        }
+        int left = access.getHP(equip) - 1;
+        if (left <= 0) {
+            owner.getEquipped()[slot] = ItemStack.EMPTY;
+            owner.getDiscard().add(freshCard(equip));
+            broadcast(table, Component.translatable("cardduel.duel.equip_broken"));
+            ItemStack card = owner.getBoard()[slot];
+            if (!card.isEmpty()) {
+                applyCardDamage(table, owner, slot, card, 0);
+            }
+        } else {
+            access.setHP(equip, left);
         }
     }
 
@@ -621,8 +660,8 @@ public final class DuelEngine {
     }
 
     /**
-     * 装备卡：附着到己方召唤物（每槽 1 件，新装备替换旧装备，旧装备进弃牌堆）。
-     * 装备的 atk 提供攻击加成（attack 时累加），hp 作为耐久先吸收伤害（applyCardDamage）。
+     * 装备卡：附着到己方召唤物（每槽 1 件，新装备替换旧装备，旧装备重置后进弃牌堆）。
+     * 装备的 atk 提供攻击加成（attack 时累加），hp 作为耐久（每次受攻击 -1，归零损坏）。
      */
     private static boolean playEquip(DuelTableBlockEntity table, DuelPlayerData data, ItemStack card,
                                      int boardSlot, ServerPlayer player) {
@@ -632,7 +671,7 @@ public final class DuelEngine {
         }
         ItemStack old = data.getEquipped()[boardSlot];
         if (!old.isEmpty()) {
-            data.getDiscard().add(old);
+            data.getDiscard().add(freshCard(old));
             broadcast(table, Component.translatable("cardduel.duel.equip_replaced",
                     playerName(table, player.getUUID())));
         }
@@ -679,10 +718,11 @@ public final class DuelEngine {
                 triggered = true;
             } else if ("secret_arrow".equals(skill) && placedSlot >= 0) {
                 ItemStack placed = actor.getBoard()[placedSlot];
-                if (!placed.isEmpty()) {
+                // equip_elytra（鞘翅）：免疫陷阱伤害（陷阱仍被消耗）
+                if (!placed.isEmpty() && !hasEquipSkill(actor, placedSlot, "elytra")) {
                     applyCardDamage(table, actor, placedSlot, placed, 3);
-                    triggered = true;
                 }
+                triggered = true;
             } else if ("secret_tnt".equals(skill) && countBoard(actor) >= 3) {
                 damageAllCreatures(table, actor, 3);
                 damageAllCreatures(table, trapOwner, 3);
@@ -715,7 +755,9 @@ public final class DuelEngine {
                 defender.getDiscard().add(trap);
                 broadcast(table, Component.translatable("cardduel.duel.secret_triggered",
                         dataName(table, defender)));
-                if (attacker.getBoard()[attackerSlot] == attackerCard) {
+                // equip_elytra（鞘翅）：免疫陷阱伤害（陷阱仍被消耗）
+                if (attacker.getBoard()[attackerSlot] == attackerCard
+                        && !hasEquipSkill(attacker, attackerSlot, "elytra")) {
                     applyCardDamage(table, attacker, attackerSlot, attackerCard, 2);
                 }
             }
@@ -772,6 +814,58 @@ public final class DuelEngine {
         return access != null ? access.getATK(equip) : 0;
     }
 
+    private static String equipSkill(DuelPlayerData data, int slot) {
+        ItemStack equip = data.getEquipped()[slot];
+        ICard access = ICard.getICardOrNull(equip);
+        return access != null ? access.getSkill(equip) : null;
+    }
+
+    private static boolean hasEquipSkill(DuelPlayerData data, int slot, String key) {
+        String skill = equipSkill(data, slot);
+        return skill != null && skill.contains(key);
+    }
+
+    /** 装备层：装备当前耐久（也是额外生命层，随磨损递减） */
+    private static int equipDurability(DuelPlayerData data, int slot) {
+        ItemStack equip = data.getEquipped()[slot];
+        ICard access = ICard.getICardOrNull(equip);
+        return access != null ? access.getHP(equip) : 0;
+    }
+
+    private static boolean hasTaunt(DuelPlayerData data) {
+        for (int i = 0; i < DuelPlayerData.BOARD_SIZE; i++) {
+            if (!data.getBoard()[i].isEmpty() && hasEquipSkill(data, i, "taunt")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 从注册表重建全新卡牌（重置数值），用于进弃牌堆时恢复初始状态。
+     * 注册表无此卡（如硬币）时原样复制兜底。
+     */
+    private static ItemStack freshCard(ItemStack card) {
+        ICard access = ICard.getICardOrNull(card);
+        if (access == null) {
+            return card.copy();
+        }
+        return CdAPI.getCommonCardIndex(access.getCardId(card))
+                .map(index -> {
+                    CardDataPOJO data = index.getCardData();
+                    return CardItemBuilder.create()
+                            .setId(access.getCardId(card))
+                            .setHP(data.getHP())
+                            .setMP(data.getMP())
+                            .setATK(data.getATK())
+                            .setSkill(data.getSKILL())
+                            .setType(data.getTYPE())
+                            .setTribe(data.getTRIBE())
+                            .build();
+                })
+                .orElseGet(card::copy);
+    }
+
     private static int countBoard(DuelPlayerData data) {
         int count = 0;
         for (ItemStack stack : data.getBoard()) {
@@ -798,7 +892,8 @@ public final class DuelEngine {
     private static void damageAllCreatures(DuelTableBlockEntity table, DuelPlayerData owner, int damage) {
         ItemStack[] board = owner.getBoard();
         for (int i = 0; i < board.length; i++) {
-            if (!board[i].isEmpty()) {
+            // equip_elytra（鞘翅）：免疫陷阱伤害
+            if (!board[i].isEmpty() && !hasEquipSkill(owner, i, "elytra")) {
                 applyCardDamage(table, owner, i, board[i], damage);
             }
         }
