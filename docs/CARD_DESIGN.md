@@ -172,38 +172,69 @@
 
 > 用户 2025 需求：技能做成独立模块，可被**任意类型卡牌**调用；玩家能像添加卡牌一样**添加新机制**。
 > 结论：**框架能力足够（项目已有完整的卡包数据驱动基础设施可复用），但属于 P2 级重构，现不实施**。理由：P1 内建技能已闭环且尚未实测，立即重构会叠加测试盲区；本草案作为 P2 开局第一项。
+> 用户 2025 补充设计（本节 9.1 已按此重写）：技能 = `trigger` + **有序 effects 列表**；效果由**基础效果接口**（effect id + 参数）组成，一个技能可按顺序串联多个效果。
 
 **难度预估**：中-高。10-15 个文件，`DuelEngine` 大半重构，建议 3 个阶段交付（技能定义→执行器→迁移）。
 
-### 9.1 架构草案
+### 9.1 架构草案（含用户确认的技能格式）
 
-1. **技能资源格式**（与卡包同模式，放资源包 `cards/skills/*.json`）：
+1. **技能资源格式**（与卡包同模式，放资源包 `cards/skills/*.json`；用户示例规范化后如下）：
    ```json
    {
-     "id": "fire_3",
-     "trigger": "on_play_mana",          // 触发时机
-     "effect": "damage_enemy_summon",    // 内建效果类型
-     "params": { "amount": 3, "target": "random" }
+     "id": "egskill_1",
+     "trigger": "on_play_mana",
+     "effects": [
+       { "effect": "add_atk",  "target": "self", "amount": 1 },
+       { "effect": "taunt",   "target": "self" }
+     ]
    }
    ```
-   trigger 枚举：on_summon / on_death / on_attack / on_damaged / on_turn_start / on_turn_end / on_draw / on_play_mana / on_play_secret / on_equip / on_unequip …
+   即：该技能触发时**先**"增加 1 点攻击力"、**再**获得"嘲讽"。规范化说明（与用户原始示例的差异，已按此定稿）：
+   - `effects` 用 **数组** 而非对象——JSON 对象不保证顺序，而技能要求"按序依次触发"，数组是唯一保序写法
+   - 效果条目统一为对象：`{ "effect": "<效果类型id>", "<参数名>": <参数值> }`
+   - 默认 `target` 为 `"self"`（技能承载者自身：召唤物/装备宿主/玩家），可省略；`deal_damage` 等必须显式指定目标
+   - `trigger` 枚举：on_summon / on_death / on_attack / on_attacked / on_damaged / on_turn_start / on_turn_end / on_draw / on_play_mana / on_play_card / on_opponent_play_card / on_opponent_summon / on_opponent_attack / on_equip / on_unequip …
 
-2. **SkillRegistry**：加载 + 校验 + 按 trigger 索引（复用 `CommonCardPackLoader`/`CardAssetManager`/POJO 模式）
+2. **基础效果接口清单 v1**（P2 实施时的内建 effect 集合；玩家组合它们即可造新技能）：
 
-3. **SkillDispatcher**：引擎各触发点调用 `dispatcher.dispatch(trigger, context)`，遍历相关卡牌（场上/手牌/装备/秘密区）的 skill id → 查表执行 effect
+   | effect id | 类别 | 参数 | 语义 |
+   |---|---|---|---|
+   | `add_atk` | 数值 | `amount`, `target` | +攻击力 |
+   | `add_hp` | 数值 | `amount`, `target` | +生命（治疗，封顶） |
+   | `deal_damage` | 数值 | `amount`, `target` | 造成伤害（target：`enemy_player`/`random_enemy_summon`/`random_enemy_unit`/`selected_enemy_summon`/`attacker`/`self`） |
+   | `draw` | 数值 | `amount` | 抽牌（触发者玩家） |
+   | `add_mana` | 数值 | `amount` | 本回合 +法力 |
+   | `block_damage` | 状态 | `once` | 抵挡下一次伤害（通用化的"不死图腾"） |
+   | `add_durability` | 数值 | `amount`, `target` | 调整装备耐久（可选） |
+   | `taunt` | 规则 | — | 嘲讽：对方必须先攻击此单位 |
+   | `charge` | 规则 | — | 冲锋：上场即可攻击 |
+   | `windfury` | 规则 | — | 风怒：每回合攻击两次 |
+   | `guard` | 规则 | — | 受击伤害 -1 |
+   | `ranged` | 规则 | — | 攻击不受反击 |
+   | `trap_immune` | 规则 | — | 免疫陷阱伤害 |
+   | `thorns` | 规则 | `amount` | 受击反伤 N（含"无法主动攻击"副作用，P2 拆分为独立规则项再议） |
 
-4. **效果分两类**：
-   - **效果型**（直伤/回复/抽牌/法力/buff/耐久…）：纯数据驱动，**玩家加 JSON 即可添加**（组合已有 effect+参数）
-   - **规则型**（嘲讽/冲锋/风怒/减伤/免疫…，改变游戏规则而非一次性效果）：引擎提供规则钩子接口（`canAttack/canTarget/damageModify/isImmune`），钩子也是内建 effect 集合；玩家可组合已有规则，**新规则类型需 Java 扩展**
+   - **数值型**：纯数据驱动，玩家加 JSON 即可组合（对应 `SkillHooks` 的一次性效果）
+   - **规则型**：引擎提供规则钩子接口（`canAttack/canTarget/damageModify/isImmune`），钩子即上表内建 effect；玩家可组合已有规则，**新规则需 Java 扩展**
+   - **统一模型红利**：秘密陷阱也归一到此模型——`secret_mine` = `trigger: on_opponent_play_card` + `effects: [deal_damage enemy_player 2]`，与魔法/装备/召唤技能共用一套机制
+
+3. **SkillRegistry**：加载 + 校验 + 按 trigger 索引（复用 `CommonCardPackLoader`/`CardAssetManager`/POJO 模式）
+
+4. **SkillDispatcher**：引擎各触发点调用 `dispatcher.dispatch(trigger, context)`，遍历相关卡牌（场上/手牌/装备/秘密区）的 skill id → 按 `effects` 顺序执行
 
 5. **effect 扩展点**：`DeferredRegister<EffectType>`（NeoForge 注册），其他 mod/开发者可注册全新 effect 类型（供高级自定义机制）
 
 ### 9.2 迁移清单（P2 实施时）
 
-- 现有硬编码内建技能全部转为技能 JSON：mana 9 张 + trap 8 张 + equip 机制 5 个（guard/ranged/elytra/trident/taunt）+ thorns/秘密触发条件
+- 现有硬编码内建技能全部转为技能 JSON，映射示例：
+  - `heal_4` = on_play_mana → `[add_hp self 4]`；`harm_3` = on_play_mana → `[deal_damage enemy_player 3]`
+  - `golden_heal` = on_play_mana → `[add_hp self 5, draw 1]`（多效果串联示例）
+  - `totem_protect` = on_play_mana → `[block_damage once]`
+  - `secret_mine/arrow/wither/sculk/tnt` = on_opponent_* → 对应效果
+  - `cactus_thorns` = on_attacked → `[deal_damage attacker 1]`；装备机制 5 个 = 规则型 effect
 - `DuelEngine` 触发点接 dispatcher：playCard / attack / applyCardDamage / startTurn / endTurn / drawCard / death / summon（约 10 处）
 - 卡数据 `skill` 字段语义不变（存 skill id），技能定义独立于卡牌 JSON
-- 校验：引用不存在的 skill id / 参数越界 → 加载时警告 + 对局中兜底白板
+- 校验：引用不存在的 skill id / effect id / 参数越界 → 加载时警告 + 对局中兜底白板
 
 ### 9.3 装备规则修订记录（用户 2025 确认）
 
