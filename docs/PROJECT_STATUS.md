@@ -2,7 +2,7 @@
 
 > 本文件是项目进度的**唯一总索引**：已完成 / 未测试 / 未完成 / 计划 四类状态 + 代码框架梳理 + 关键决策记录。
 > 详细设计见同目录 `CARD_DESIGN.md`（卡池设计+技能草案+交互规划），测试细节见 `P1_TEST.md`（测试清单+B1-B20 风险）。
-> 最后更新：四类结算区分（P1-5）与装备规则修订完成后。
+> 最后更新：回合上限（默认 50 可配置）与双端同步优化设计定稿（见 `CARD_DESIGN.md` §9.5）。
 
 ---
 
@@ -42,7 +42,7 @@
 | `block/` + `block/entity/` | 牌桌 | `DuelTableBlock`（`DOUBLE` 双桌状态）、`DuelTableBlockEntity`（**对局数据宿主**：hostData/guestData、phase、manaCap/hpCap、NBT 三通道） |
 | `duel/` | **对局核心（服务端权威）** | `DuelEngine`（入座/开局/回合/出牌/攻击/四类结算/秘密/内建技能）、`DuelPlayerData`、`DuelPhase`（IDLE/SETUP/WAITING/MULLIGAN/PLAYING/FINISHED）、`DuelSeat`、`SkillHooks`（6 个空钩子，P2） |
 | `network/` | 网络 | `DuelNet`（playToServer 注册+处理器）+ payload 10 个（见 2.3） |
-| `config/` | 配置 | `CommonConfig`（`DefaultPackDebug`）、`DuelConfig`（SERVER：`trapZoneLimit` 1-8 默认 3） |
+| `config/` | 配置 | `CommonConfig`（`DefaultPackDebug`）、`DuelConfig`（SERVER：`trapZoneLimit` 1-8 默认 3；**P2 增 `maxTurnLimit` 默认 50 建议 10-200**） |
 | `init/` | 注册表 | `ModBlocks`/`ModItem`/`ModBlockEntities`/`ModDataComponents`/`ModAttachments`（`DUEL_SEAT`）/`ModMenuType` |
 | 其他 | 命令/事件 | `command/DuelCommands`（`/duel endturn|status|leave`）、`event/DuelPlayerEvents`（掉线判负）、`skill/SkillHooks` |
 
@@ -109,8 +109,8 @@
 8. 编译 deprecation 警告清理（`@EventBusSubscriber.bus()` 等 5 条，沿用项目既有风格）
 9. `/duel fillbag` 调试命令（一键填满卡包，测试辅助）
 10. 陷阱卡背渲染与秘密触发扩展
-11. **同步包瘦身**：`savePublic` 中 deck/discard 内容改为仅同步数量（客户端只显示数量、从不读内容），可减小每次 `sync()` 约 8KB；见 `CARD_DESIGN.md` 9.4 节评估
-12. **膨胀硬上限（印卡前置条件，P2 必做）**：弃牌堆上限（如 60 张，超出销毁最旧）+ 对局回合数上限（如 60 回合按血量判胜）；否则"印卡治疗闭环"会让弃牌堆无限增长直至超 chunk 2MB 上限坏档；评估见 `CARD_DESIGN.md` 9.4 节
+11. **同步包瘦身（设计已定稿，见 `CARD_DESIGN.md` §9.5）**：阶段一必做——`savePublic` 公开同步视图 deck/discard 内容改为仅数量（存档 NBT 保留全量内容），单次同步 ~8KB→~1KB；阶段二可选——同步时机脏标记化/按 tick 节流
+12. **膨胀硬上限（印卡前置条件，P2 必做）**：①**回合上限已定稿**——`DuelConfig.maxTurnLimit` 默认 50 可配置（SERVER，建议范围 10-200），配置注释警告+客户端「第 X/50 回合」倒计提醒，达上限按血量判胜/平局；②弃牌堆上限（如 60 张，超出销毁最旧）；设计见 `CARD_DESIGN.md` §9.5
 
 ---
 
@@ -118,7 +118,7 @@
 
 1. **近期（可选）**：制作 37 张卡包 JSON（`CARD_DESIGN.md` 卡表 → `cards/index`+`cards/data`+占位贴图）→ 用户双客户端实测 P1 全流程 → 按 B1-B20 修 bug
 2. **P2 开局**：技能数据驱动系统（第 9 节三阶段）→ rarity/派系字段 → 卡包内容落地 → 拖拽交互
-3. **推送**：`bug_version` 本地领先 origin 9 个提交（P1-5 系列），待用户指示推送
+3. **推送**：用户已指示推送（回合上限+同步优化设计定稿后）；本提交一并推送，之后 origin 与本地同步
 
 ---
 
@@ -130,6 +130,8 @@
 - **四类结算**：秘密区上限默认 3 可配 1-8；装备每召唤物 1 件、替换旧装备重置进弃牌堆
 - **装备**：HP 字段即耐久（不新增字段）；召唤物**受到任意伤害**耐久-1（guard 减到 0 不磨损）；损坏→装备重置+召唤物恢复原有属性；召唤物死亡→卡与装备均重置数值进弃牌堆
 - **技能系统**：独立模块、任意类型卡牌可调用、玩家可加新机制——数据驱动方向，P2 实施（第 9 节）
+- **回合上限**：默认 50、可配置（SERVER `DuelConfig.maxTurnLimit`，建议 10-200）；配置注释必须提醒玩家过高回合数会引发对局状态/存档膨胀风险；达上限按血量判胜、相等平局；HUD 显示「第 X/50 回合」+ 剩余 ≤5 回合警告色
+- **双端同步**：deck/discard 内容移出公开同步（存档保留全量、同步仅数量）；手牌/秘密维持定向私发不变；同步时机脏标记化为可选优化
 - **拖拽施法**：先记录，P2 实现
 - **卡池**：37 张设计稿（`CARD_DESIGN.md`），尚未敲定最终数值
 
