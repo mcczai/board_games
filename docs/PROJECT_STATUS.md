@@ -109,6 +109,7 @@
 8. 编译 deprecation 警告清理（`@EventBusSubscriber.bus()` 等 5 条，沿用项目既有风格）
 9. `/duel fillbag` 调试命令（一键填满卡包，测试辅助）
 10. 陷阱卡背渲染与秘密触发扩展
+11. **同步包瘦身**：`savePublic` 中 deck/discard 内容改为仅同步数量（客户端只显示数量、从不读内容），可减小每次 `sync()` 约 8KB；见 `CARD_DESIGN.md` 9.4 节评估
 
 ---
 
