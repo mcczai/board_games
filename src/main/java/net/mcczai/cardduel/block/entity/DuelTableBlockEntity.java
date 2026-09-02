@@ -277,7 +277,7 @@ public class DuelTableBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
         super.saveAdditional(tag, provider);
-        savePublic(tag, provider);
+        savePublic(tag, provider, true);
 
         // 全量数据（含手牌）落盘，覆盖上面写入的公开视图
         CompoundTag hostTag = new CompoundTag();
@@ -290,9 +290,12 @@ public class DuelTableBlockEntity extends BlockEntity {
     }
 
     /**
-     * 只写公开数据（不含手牌内容），供同步包使用。
+     * 只写公开数据（不含手牌内容），供同步包与存档使用。
+     *
+     * @param includeDeckContents true=deck/discard 完整内容（存档；对局前牌组预览需要）；
+     *                            false=仅数量（对局中公开同步瘦身）
      */
-    private void savePublic(CompoundTag tag, HolderLookup.Provider provider) {
+    private void savePublic(CompoundTag tag, HolderLookup.Provider provider, boolean includeDeckContents) {
         tag.putString("Phase", this.phase.name());
         tag.putInt("ManaCap", this.manaCap);
         tag.putInt("HpCap", this.hpCap);
@@ -308,11 +311,11 @@ public class DuelTableBlockEntity extends BlockEntity {
         }
 
         CompoundTag hostTag = new CompoundTag();
-        this.hostData.savePublic(hostTag, provider);
+        this.hostData.savePublic(hostTag, provider, includeDeckContents);
         tag.put("HostData", hostTag);
 
         CompoundTag guestTag = new CompoundTag();
-        this.guestData.savePublic(guestTag, provider);
+        this.guestData.savePublic(guestTag, provider, includeDeckContents);
         tag.put("GuestData", guestTag);
     }
 
@@ -339,9 +342,12 @@ public class DuelTableBlockEntity extends BlockEntity {
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
-        // 同步包只含公开数据：手牌内容经 ClientboundDuelHandPayload 定向发给本人
+        // 同步包只含公开数据：手牌内容经 ClientboundDuelHandPayload 定向发给本人。
+        // deck/discard 内容仅在对局前（SETUP/WAITING 牌组预览渲染需要）随包；
+        // 对局中只同步数量，避免高频全量同步（约 8KB → 1KB）。
+        boolean includeDeckContents = this.phase == DuelPhase.SETUP || this.phase == DuelPhase.WAITING;
         CompoundTag tag = new CompoundTag();
-        savePublic(tag, provider);
+        savePublic(tag, provider, includeDeckContents);
         return tag;
     }
 

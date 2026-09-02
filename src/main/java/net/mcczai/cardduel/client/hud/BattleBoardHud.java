@@ -63,8 +63,11 @@ public class BattleBoardHud {
         renderPlayerBar(g, MARGIN, MARGIN, meName, me, sync, myTurn, meEquip);
         renderPlayerBar(g, sw - BAR_W - MARGIN, MARGIN, foeName, foe, sync, !myTurn, foeEquip);
 
-        String turn = Component.translatable("cardduel.hud.turn", sync.turnNumber()).getString();
-        g.drawCenteredString(mc.font, turn, sw / 2, MARGIN + 4, 0xFFFFFFFF);
+        String turn = Component.translatable("cardduel.hud.turn_total",
+                sync.turnNumber(), sync.turnLimit()).getString();
+        // 剩余回合 ≤5 时以警告色提示（回合上限保险丝即将触发）
+        int turnColor = sync.turnLimit() - sync.turnNumber() <= 5 ? 0xFFFF7043 : 0xFFFFFFFF;
+        g.drawCenteredString(mc.font, turn, sw / 2, MARGIN + 4, turnColor);
 
         // 选中 / 换牌提示
         if ("MULLIGAN".equals(sync.phase())) {

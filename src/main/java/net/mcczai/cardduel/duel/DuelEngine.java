@@ -267,9 +267,32 @@ public final class DuelEngine {
         }
 
         SkillHooks.onTurnEnd(table, activeData(table));
+        // 回合上限保险丝：达到配置上限立即结束，按剩余血量判胜（相等平局）
+        if (table.getTurnNumber() >= DuelConfig.MAX_TURN_LIMIT.get()) {
+            broadcast(table, Component.translatable("cardduel.duel.turn_limit",
+                    table.getTurnNumber(), DuelConfig.MAX_TURN_LIMIT.get()));
+            finishDuel(table, decideByHp(table));
+            return true;
+        }
         table.setActiveUuid(otherUuid);
         startTurn(table);
         return true;
+    }
+
+    /**
+     * 回合上限判定：剩余血量多者胜；相等返回 null（平局）。
+     */
+    @Nullable
+    private static UUID decideByHp(DuelTableBlockEntity table) {
+        int hostHp = table.getHostData().getHp();
+        int guestHp = table.getGuestData().getHp();
+        if (hostHp > guestHp) {
+            return table.getHostUuid();
+        }
+        if (guestHp > hostHp) {
+            return table.getGuestUuid();
+        }
+        return null;
     }
 
     // ==================== 抽牌 / 伤害 / 胜负 ====================
@@ -326,8 +349,11 @@ public final class DuelEngine {
         if (table.getPhase() != DuelPhase.PLAYING) {
             return;
         }
-        String winnerName = winnerUuid == null ? "?" : playerName(table, winnerUuid);
-        broadcast(table, Component.translatable("cardduel.duel.finish", winnerName));
+        if (winnerUuid == null) {
+            broadcast(table, Component.translatable("cardduel.duel.draw_game"));
+        } else {
+            broadcast(table, Component.translatable("cardduel.duel.finish", playerName(table, winnerUuid)));
+        }
         table.resetDuel();
         syncToPlayers(table);
     }

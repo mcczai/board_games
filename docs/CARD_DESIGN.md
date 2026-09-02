@@ -1,6 +1,7 @@
 # Card Duel · 基础卡牌设计（P1 测试卡池）
 
-> 状态：**设计稿 v1，已部分实现**。四类结算区分 + P1 内建技能最小集已实现（2025，见第 7 节）；37 张卡包 JSON/贴图仍待 P2。
+> 状态：**设计稿 v2（平衡版，53 张）**。四类结算区分 + P1 内建技能最小集已实现（2025，见第 7 节）；卡包 JSON/贴图仍待 P2。
+> 平衡基准：**10 法力上限 / 30 生命 / 50 回合上限**（标准对局参数，见 §5.5 平衡验证）。
 > 关联：`P1_TEST.md`（测试清单，含 P1-5 四类结算用例）。
 
 ---
@@ -10,7 +11,7 @@
 **目的**：为 P1 对战核心提供可测试的卡池。P1 阶段所有卡牌（含魔法/陷阱/装备）按召唤卡数值结算；P2 技能系统实现后按类型差异化。
 
 **硬约束**（来自现有代码，设计已满足）：
-1. 卡包不允许重复卡（`CardBagMenu.canInsertCard`）→ 组满一副 27 张需要 27 张不同卡 → 本卡池 37 张，可组 2 副不同牌组
+1. 卡包不允许重复卡（`CardBagMenu.canInsertCard`）→ 本卡池 **53 张**，可供双方各组一副 26 张左右的牌组（牌库上限 27）
 2. 数据校验要求 `ATK ≥ 1、HP ≥ 1、MP ≥ 1` → 纯防御/纯法术卡也设有 ≥1 的攻击（"P1 临时数值"）
 3. 卡牌 JSON 目前无"稀有度"字段 → P2 实现卡包时需在 `CardDataPOJO`/`CardIndexPOJO` 增加 `rarity` 字段（见第 6 节）
 
@@ -27,6 +28,7 @@
 3. **派系**：自然、下界、末地、虚空、红石、史蒂夫（详见第 2 节）
 4. **稀有度**：普通/稀有/罕见/传说。强度随稀有度上升，但保留战术弹性（稀有卡可凭特效胜过低稀有度白板高攻，反之高攻白板也能赢花哨罕见卡）
 5. **技能**：关键字参考炉石等卡牌游戏（战吼/亡语/嘲讽/冲锋/风怒/秘密/剧毒/潜行），全部以"P2 技能 id"形式预留；`SkillHooks` 已就位
+6. **平衡基准**：标准对局 10 法力上限 / 30 生命 / 50 回合上限。要求：①正常对局（含治疗与拖延）50 回合内必分胜负（疲劳兜底）；②每种主流构筑都有对应的克制解；③体现构筑联动（快攻、陷阱猜谜、成长组合、控制疲劳），见 §5.5
 
 ---
 
@@ -49,69 +51,85 @@
 
 | 稀有度 | id | 数量（本卡池） | 定位 |
 |---|---|---|---|
-| 普通 | common | 16 | 基础数值卡，构筑骨干 |
-| 稀有 | rare | 11 | 一个明确的特效 |
-| 罕见 | epic | 7 | 强力特效或组合核心 |
-| 传说 | legendary | 3 | 高费终结者：监守者、不死图腾、下界合金剑 |
+| 普通 | common | 18 | 基础数值卡，构筑骨干 |
+| 稀有 | rare | 18 | 一个明确的特效 |
+| 罕见 | epic | 13 | 强力特效或组合核心 |
+| 传说 | legendary | 4 | 高费终结者：监守者、末影龙、不死图腾、下界合金剑 |
 
 ---
 
 ## 4. 数值规范
 
 - **HP** ≈ 生物血量（1 心 = 1 HP）；**ATK** ≈ 生物近战伤害（1 心 = 1 ATK）
-- **费用 MP** ≈ (ATK + HP) / 2，再按特效强度 ±1；传说卡费用 5-8
-- 药水类：回复/伤害量直接折算数值；抽牌/法力类特效 +1 费
-- **装备卡**：atk = 攻击加成；**hp = 耐久值**（每次受攻击 -1，归零损坏，同时是该装备提供的额外生命层）
+- **费用模型（v2）**：白板 MP ≈ ceil((ATK + HP - 1) / 2)——1 费 3 点、2 费 5 点、3 费 7 点、4 费 9 点、5 费 11 点、6 费 13 点、8 费 17 点、9 费 19 点；特效按强度 -1 点或 +1 费（嘲讽/冲锋/风怒 +1 费档；亡语/战吼按效果 1-2 费价值）
+- **直伤/治疗定价**（30 血基准）：2 费 = 3 伤或 3 治疗（指定目标）；随机目标与限制条件打 8 折（2 费 3 伤随机）；AOE 按命中数量折扣（4 费敌方全场 2 伤）
+- **药水类**：回复/伤害量直接折算数值；抽牌 2 张 ≈ 3 费；临时法力 ≈ 0 费（附带抽 1 则 1 费）
+- **装备卡**：atk = 攻击加成；**hp = 耐久值**（每次受攻击 -1，归零损坏，同时是该装备提供的额外生命层）；耐久 2 = 标准，减伤/嘲讽类装备耐久 3-6
 - **魔法/陷阱卡**：atk/hp 为 P1 占位数值（陷阱 thorns 类 hp 会参与站场战斗）
 
 ---
 
-## 5. 完整卡表（37 张）
+## 5. 完整卡表（53 张，平衡版 v2）
 
-### 5.1 召唤卡（11 张）— 生物
+### 5.1 召唤卡（20 张）— 生物
 
 | id | 名字 | 派系 | 稀有度 | 费用 | 攻/血 | 技能 id（P2） | 技能描述（P2） | MC 依据 |
 |---|---|---|---|---|---|---|---|---|
-| sheep | 羊 | 自然 | 普通 | 1 | 1/4 | — | 白板 | 羊 4 心血量、无攻击 |
+| sheep | 羊 | 自然 | 普通 | 1 | 1/3 | — | 白板（前期肉盾） | 羊 4 心血量、无攻击 |
+| skeleton | 骷髅 | 自然 | 普通 | 1 | 2/1 | — | 白板（快攻骨干） | 骷髅远程攻击 |
 | bee | 蜜蜂 | 自然 | 普通 | 1 | 1/1 | bee_sting | 亡语毒针：对击杀者造成 1 伤害 | 蜜蜂蜇人后死亡 |
-| wolf | 狼 | 自然 | 普通 | 2 | 2/4 | wolf_pack | 战吼狼群：其他己方狼 +1 攻 | 狼群协同 |
-| zombie | 僵尸 | 自然 | 普通 | 2 | 2/3 | zombie_rise | 亡语：召唤 1 个 1/2 僵尸 | 僵尸重生/尸潮 |
-| iron_golem | 铁傀儡 | 自然 | 稀有 | 5 | 4/8 | iron_guard | 嘲讽 | 铁傀儡护卫村民 |
-| creeper | 苦力怕 | 自然 | 稀有 | 3 | 1/6 | creeper_explosion | 亡语爆炸：双方全场召唤物与双方玩家各受 2 伤害 | 苦力怕自爆 |
-| enderman | 末影人 | 末地 | 稀有 | 4 | 4/5 | ender_teleport | 潜行；本回合首次受击免疫（瞬移闪避） | 末影人瞬移 |
-| shulker | 潜影贝 | 末地 | 罕见 | 5 | 3/6 | shulker_levitate | 战吼：一个敌方召唤物悬浮 1 回合（无法攻击） | 潜影贝漂浮弹 |
-| blaze | 烈焰人 | 下界 | 稀有 | 4 | 3/3 | blaze_barrage | 风怒（每回合攻击两次） | 烈焰人三连火球 |
+| silverfish | 蠹虫 | 自然 | 普通 | 1 | 1/1 | silverfish_growth | 成长：你的回合开始时 +1/+1 | 蠹虫钻入石缝持续滋生 |
+| zombie | 僵尸 | 自然 | 普通 | 2 | 2/2 | zombie_rise | 亡语：召唤 1 个 1/2 僵尸 | 僵尸重生/尸潮 |
+| wolf | 狼 | 自然 | 稀有 | 2 | 2/3 | wolf_pack | 战吼狼群：其他己方狼 +1 攻 | 狼群协同 |
+| snow_golem | 雪傀儡 | 自然 | 稀有 | 2 | 1/3 | taunt | 嘲讽 | 雪傀儡投雪球吸引火力 |
+| pillager | 掠夺者 | 自然 | 稀有 | 2 | 2/1 | pillager_shot | 战吼：对对方玩家造成 1 伤害 | 掠夺者弩手远程射击 |
+| endermite | 末影螨 | 末地 | 稀有 | 2 | 1/2 | silverfish_growth | 成长：你的回合开始时 +1/+1 | 末影螨随末影珍珠滋扰 |
+| creeper | 苦力怕 | 自然 | 罕见 | 3 | 1/5 | creeper_explosion | 亡语爆炸：双方全场召唤物与双方玩家各受 2 伤害 | 苦力怕自爆 |
+| blaze | 烈焰人 | 下界 | 稀有 | 3 | 2/3 | blaze_barrage | 风怒（每回合攻击两次） | 烈焰人三连火球 |
 | phantom | 幻翼 | 虚空 | 稀有 | 3 | 3/2 | phantom_dive | 冲锋（上场即可攻击） | 幻翼俯冲偷袭 |
+| vex | 恼鬼 | 虚空 | 稀有 | 3 | 3/1 | vex_barrage | 风怒（每回合攻击两次） | 恼鬼小剑连刺 |
+| enderman | 末影人 | 末地 | 罕见 | 4 | 3/4 | ender_teleport | 潜行；本回合首次受击免疫（瞬移闪避） | 末影人瞬移 |
+| guardian | 守卫者 | 自然 | 稀有 | 4 | 3/6 | taunt | 嘲讽 | 守卫者守护海底神殿 |
+| shulker | 潜影贝 | 末地 | 罕见 | 5 | 3/5 | shulker_levitate | 战吼：一个敌方召唤物悬浮 1 回合（无法攻击） | 潜影贝漂浮弹 |
+| iron_golem | 铁傀儡 | 自然 | 罕见 | 5 | 3/7 | taunt | 嘲讽 | 铁傀儡护卫村民 |
+| ravager | 劫掠兽 | 自然 | 罕见 | 6 | 5/6 | ravager_charge | 冲锋（上场即可攻击） | 劫掠兽冲撞破坏 |
 | warden | 监守者 | 虚空 | 传说 | 8 | 6/8 | warden_sonic | 回声重击：攻击时对相邻敌方召唤物各造成 2 伤害 | 监守者声波范围攻击 |
+| ender_dragon | 末影龙 | 末地 | 传说 | 9 | 7/8 | dragon_breath | 战吼龙息：对敌方全场召唤物各造成 2 伤害 | 末影龙龙息吐息 |
 
-### 5.2 魔法卡（9 张）— 药水/消耗品/法术
+### 5.2 魔法卡（13 张）— 药水/消耗品/法术
 
 | id | 名字 | 派系 | 稀有度 | 费用 | 攻/血(P1临时) | 技能 id（P2） | 技能描述（P2） | MC 依据 |
 |---|---|---|---|---|---|---|---|---|
-| healing_potion | 治疗药水 | 史蒂夫 | 普通 | 1 | 1/3 | heal_4 | 回复自己 4 点生命 | 喷溅治疗药水 |
+| healing_potion | 治疗药水 | 史蒂夫 | 普通 | 1 | 1/3 | heal_3 | 回复自己 3 点生命 | 喷溅治疗药水 |
 | harming_potion | 伤害药水 | 史蒂夫 | 普通 | 2 | 2/2 | harm_3 | 对对方玩家造成 3 伤害 | 喷溅伤害药水 |
-| redstone_pulse | 红石脉冲 | 红石 | 普通 | 1 | 1/2 | mana_1 | 本回合 +1 法力 | 红石中继器延时供能 |
-| ender_pearl | 末影珍珠 | 末地 | 普通 | 2 | 2/2 | pearl_strike | 对随机敌方召唤物造成 2 伤害 | 珍珠瞬移+摔落伤害 |
-| fire_charge | 火焰弹 | 下界 | 普通 | 2 | 2/2 | fire_3 | 对任一目标（召唤物或玩家）造成 3 伤害 | 火焰弹远程点火 |
-| golden_apple | 金苹果 | 自然 | 稀有 | 3 | 1/3 | golden_heal | 回复 5 点生命，抽 1 张牌 | 金苹果回血+吸收 |
-| lava_bucket | 熔岩桶 | 下界 | 稀有 | 4 | 3/2 | lava_4 | 对随机敌方单位（含玩家）造成 4 伤害 | 熔岩灼烧 |
+| redstone_pulse | 红石脉冲 | 红石 | 普通 | 1 | 1/2 | mana_1 | 本回合 +1 法力，抽 1 张牌（P2；P1 内建仅 +1 法力） | 红石中继器延时供能 |
+| ender_pearl | 末影珍珠 | 末地 | 普通 | 2 | 3/1 | pearl_strike | 对随机敌方召唤物造成本卡攻击力（3）伤害 | 珍珠瞬移+摔落伤害 |
+| fire_charge | 火焰弹 | 下界 | 普通 | 2 | 2/2 | fire_3 | 对随机敌方召唤物造成 3 伤害（无召唤物则打玩家） | 火焰弹远程点火 |
+| speed_potion | 迅捷药水 | 史蒂夫 | 稀有 | 2 | 1/2 | buff_all_atk_1 | 己方全场召唤物 +1 攻 | 迅捷药水全员提速 |
+| strength_potion | 力量药水 | 史蒂夫 | 稀有 | 3 | 1/2 | buff_atk_3 | 一个己方召唤物 +3 攻 | 力量药水单体强化 |
+| splash_healing | 喷溅治疗药水 | 史蒂夫 | 稀有 | 3 | 1/3 | heal_all_2 | 己方全场召唤物恢复 2 生命 | 喷溅药水范围回血 |
+| wither_skull | 凋灵之首 | 下界 | 稀有 | 4 | 3/1 | aoe_enemy_2 | 对敌方全场召唤物各造成 2 伤害 | 凋灵之首爆破 |
+| lava_bucket | 熔岩桶 | 下界 | 稀有 | 4 | 3/2 | lava_5 | 对随机敌方单位（含玩家）造成 5 伤害 | 熔岩灼烧 |
+| golden_apple | 金苹果 | 自然 | 罕见 | 3 | 1/3 | golden_heal | 回复 5 点生命，抽 1 张牌 | 金苹果回血+吸收 |
 | bottle_o_enchanting | 经验瓶 | 史蒂夫 | 罕见 | 3 | 1/2 | draw_2 | 抽 2 张牌 | 经验瓶掉落经验=成长 |
 | totem_of_undying | 不死图腾 | 史蒂夫 | 传说 | 6 | 1/4 | totem_protect | 本局接下来一次致命伤害被抵挡，改为回复 5 生命 | 图腾免死效果 |
 
-### 5.3 陷阱卡（8 张）— 红石机关与环境危害
+### 5.3 陷阱卡（10 张）— 红石机关与环境危害
 
 | id | 名字 | 派系 | 稀有度 | 费用 | 攻/血(P1临时) | 技能 id（P2） | 技能描述（P2） | MC 依据 |
 |---|---|---|---|---|---|---|---|---|
 | pressure_plate_mine | 压力板地雷 | 红石 | 普通 | 1 | 2/2 | secret_mine | 秘密：对方打出下一张牌时，对其玩家造成 2 伤害 | 压力板+TNT 矿车 |
+| tripwire_hook | 绊线钩 | 红石 | 普通 | 2 | 1/2 | secret_freeze | 秘密：对方召唤物攻击时，冻结该召唤物（本回合无法攻击） | 绊线钩触发机关 |
 | anvil_drop | 铁砧坠落 | 红石 | 普通 | 2 | 3/2 | anvil_3 | 对一个敌方召唤物造成 3 伤害 | 铁砧掉落砸伤 |
-| cactus | 仙人掌 | 自然 | 普通 | 2 | 1/3 | cactus_thorns | 反伤：受到攻击时对攻击方造成 1 伤害 | 仙人掌接触掉血 |
-| magma_block | 岩浆块 | 下界 | 普通 | 2 | 1/3 | magma_burn | 反伤：受到攻击时对攻击方造成 1 伤害 | 岩浆块站立灼烧 |
+| cactus | 仙人掌 | 自然 | 普通 | 2 | 1/4 | cactus_thorns | 反伤：受到攻击时对攻击方造成 1 伤害 | 仙人掌接触掉血 |
+| magma_block | 岩浆块 | 下界 | 普通 | 2 | 1/2 | magma_thorns | 反伤：受到攻击时对攻击方造成 2 伤害（P1 内建反伤 1，P2 为 2） | 岩浆块站立灼烧 |
+| observer | 侦测器 | 红石 | 稀有 | 2 | 1/2 | secret_draw | 秘密：对方打出魔法卡时，你抽 1 张牌 | 侦测器检测变化 |
 | dispenser_trap | 发射器陷阱 | 红石 | 稀有 | 3 | 2/2 | secret_arrow | 秘密：对方召唤物上场时，对其造成 3 伤害 | 发射器射箭 |
 | tnt | TNT | 红石 | 稀有 | 3 | 3/2 | secret_tnt | 秘密：对方场上有 3 个召唤物时触发，双方全场召唤物各受 3 伤害 | TNT 爆破 |
 | wither_rose | 凋零玫瑰 | 下界 | 罕见 | 3 | 2/2 | secret_wither | 秘密：对方召唤物攻击时，攻击方立即受到 2 伤害 | 凋零玫瑰凋零效果 |
 | sculk_shrieker | 幽匿尖啸体 | 虚空 | 罕见 | 4 | 2/2 | secret_sculk | 秘密：触发后对方下回合跳过抽牌 | 尖啸唤醒监守者（打断行动） |
 
-### 5.4 装备卡（9 张）— 剑盾弓甲与鞘翅
+### 5.4 装备卡（10 张）— 剑盾弓甲与鞘翅
 
 | id | 名字 | 派系 | 稀有度 | 费用 | 攻/血(P1临时) | 技能 id（P2） | 技能描述（P2） | MC 依据 |
 |---|---|---|---|---|---|---|---|---|
@@ -123,7 +141,41 @@
 | elytra | 鞘翅 | 末地 | 罕见 | 3 | 1/2 | equip_elytra | 装备：获得冲锋（上场即可攻击），免疫陷阱伤害 | 鞘翅滑翔越障 |
 | trident | 三叉戟 | 自然 | 罕见 | 4 | 3/2 | equip_trident | 装备：+3 攻，风怒 | 三叉戟快速连刺 |
 | diamond_armor | 钻石甲 | 史蒂夫 | 罕见 | 4 | 1/6 | equip_taunt | 装备：+6 生命，嘲讽 | 钻石甲高护甲值 |
-| netherite_sword | 下界合金剑 | 下界 | 传说 | 5 | 4/2 | equip_netherite | 装备：+4 攻 +2 生命 | 下界合金武器强化 |
+| mace | 重锤 | 史蒂夫 | 罕见 | 5 | 5/2 | equip_atk_5 | 装备：+5 攻 | 重锤坠落重击 |
+| netherite_sword | 下界合金剑 | 下界 | 传说 | 5 | 4/3 | equip_netherite | 装备：+4 攻 +2 生命 | 下界合金武器强化 |
+
+### 5.5 平衡验证与构筑流派（标准对局：10 法力 / 30 生命 / 50 回合）
+
+**① 50 回合内必分胜负（三重保险）**
+- **快攻线**：无干扰 goldfish 约 8-10 回合斩杀 30 血（T1 骷髅 2/1 → T2 掠夺者 2/1+战吼 → T3 幻翼冲锋 → T4-6 直伤连拍 + 迅捷药水群体加攻 → T8-10 收割）
+- **控制线**：27 张牌库 ≈ 20-24 回合抽干（起手 4 + 每回合 1 + 经验瓶/金苹果/侦测器过牌）→ 疲劳递增：第 8 次疲劳累计 36 伤 ≥ 30 → **≤35 回合必分胜负**
+- **保险丝**：回合上限 50（`DuelConfig.maxTurnLimit`，已实现）——即使双方无限治疗，50 回合按血量判胜/平局
+
+**② 双方都有对应解法（解牌矩阵）**
+
+| 构筑 | 克制它的解 |
+|---|---|
+| 快攻铺场 | 嘲讽（雪傀儡/守卫者/铁傀儡/钻石甲）、AOE（苦力怕亡语/凋灵之首/TNT 秘密）、治疗（治疗药水/金苹果/图腾）、反伤（仙人掌/岩浆块磨损低攻生物） |
+| 控制拖疲劳 | 冲锋直脸（幻翼/劫掠兽/鞘翅）、风怒（烈焰人/恼鬼/三叉戟）、潜行首伤免（末影人）、直伤（伤害药水/熔岩桶）、成长流（拖越久生物越大）、秘密地雷（惩罚每张出牌） |
+| 成长组合（叠增益） | AOE 清场（成长生物前期 1/1 极脆）、点杀（铁砧/火焰弹）、风怒抢先（3 血内生物扛不住两次攻击）、秘密冻结 |
+| 陷阱猜谜 | 秘密上限 3 且一次性；用低费牌试探（1 费羊/骷髅试 secret_mine/arrow/tnt）；鞘翅免疫陷阱伤害；侦测器只赚牌不亏场 |
+| 装备流 | 反伤/反击磨损耐久（耐久随受击递减）、铁砧直杀本体、TNT/苦力怕全场伤害磨损全部装备、嘲讽装备可被风怒双杀 |
+
+**③ 构筑联动示例（本卡池天然支持）**
+
+| 流派 | 核心牌 | 打法曲线 |
+|---|---|---|
+| **快攻流**（低法力压制） | 骷髅/掠夺者/恼鬼/幻翼/劫掠兽 + 伤害药水/火焰弹 + 迅捷药水/木剑 | T1-T4 铺低费生物抢血，T5-T7 直伤+Buff 收割，8-10 回合结束；怕嘲讽与 AOE |
+| **陷阱流**（让对方猜测） | 压力板地雷/绊线钩/侦测器/发射器/TNT/凋零玫瑰/幽匿尖啸 + 铁砧 | 前 3 回合埋 2-3 个秘密（触发条件互不相同：出牌/铺场/攻击/打魔法），逼对方在"亏节奏试探"与"硬着头皮踩雷"之间猜；配铁砧点杀控场 |
+| **成长流**（前期叠增益后期发力） | 蠹虫/末影螨 + 力量药水/迅捷药水 + 装备（铁剑/三叉戟/重锤） + 监守者/末影龙 | T1-T3 下成长生物苟活（1/1→2/2→3/3），T4-T6 药水+装备把单个生物滚成大哥，T7+ 传说终结；怕 AOE 与点杀 |
+| **控制流**（拖疲劳） | 雪傀儡/守卫者/铁傀儡嘲讽 + 苦力怕/凋灵之首/TNT 清场 + 治疗药水/金苹果/图腾 | 前中期只解场不回攻，拖到双方牌库见底靠疲劳赢；怕冲锋直伤与成长流 |
+
+**④ 与 P1 实现的兼容性**
+- P1 内建技能子集（§7）按前缀匹配：本表全部 1-4 费魔法与陷阱沿用可解析 id（`heal_3`/`harm_3`/`fire_3`/`lava_5`/`draw_2`/`mana_1`/`golden_heal`/`pearl_strike`/`totem_protect`/`anvil_3`/`secret_mine|arrow|tnt|wither|sculk`/`cactus_thorns`），P1 可直接打出
+- `mana_1`（红石脉冲）P1 仅 +1 法力，P2 技能定义扩展为 `[add_mana 1, draw 1]`；`magma_thorns` P1 反伤 1，P2 定义反伤 2
+- `secret_freeze`/`secret_draw` 为 P2 新秘密：P1 会进秘密区但无触发逻辑（安全占坑）；`buff_all_atk_1`/`buff_atk_3`/`heal_all_2`/`aoe_enemy_2`/`silverfish_growth`/`pillager_shot`/`vex_barrage`/`dragon_breath` 为 P2 新技能，未实现前按站场白板兜底
+- 装备 10 张沿用 P1 内建机制（`equip_atk_N`/`equip_guard`/`equip_ranged`/`equip_elytra`/`equip_trident`/`equip_taunt`/`equip_netherite`）；`mace` 的 `equip_atk_5` 可直接走 `equip_atk_*` 规则
+- 未知 skill 一律按召唤卡站场兜底 → 53 张全部可被 P1 代码打出，平衡数值在 P2 技能落地前不影响对局稳定性
 
 ---
 
@@ -131,7 +183,7 @@
 
 1. `CardDataPOJO` / `CardIndexPOJO` 增加 `rarity` 字段（common/rare/epic/legendary），工具提示显示稀有度与彩色边框
 2. `CardTribe` 枚举更新为 6 派系（nature/nether/end/void/redstone/steve）+ 语言文件派系名
-3. 卡面贴图 37 张：美术未定前可全部复用 `sheep.png` 或按派系使用占位纯色（P2 再补）
+3. 卡面贴图 53 张：美术未定前可全部复用 `sheep.png` 或按派系使用占位纯色（P2 再补）
 4. 技能 id 注册：`SkillRegistry`（P2）按本表"技能 id"列实现完整技能；P1 内建子集（第 7 节）将被其取代
 5. 陷阱"秘密"机制已实现（P1：秘密区 + 5 种内建触发）；P2 扩展触发条件与卡背渲染
 
@@ -227,11 +279,14 @@
 ### 9.2 迁移清单（P2 实施时）
 
 - 现有硬编码内建技能全部转为技能 JSON，映射示例：
-  - `heal_4` = on_play_mana → `[add_hp self 4]`；`harm_3` = on_play_mana → `[deal_damage enemy_player 3]`
+  - `heal_3` = on_play_mana → `[add_hp self 3]`；`harm_3` = on_play_mana → `[deal_damage enemy_player 3]`
+  - `mana_1` = on_play_mana → `[add_mana 1, draw 1]`（P1 硬编码只有 +1 法力，P2 定义补抽牌）
   - `golden_heal` = on_play_mana → `[add_hp self 5, draw 1]`（多效果串联示例）
   - `totem_protect` = on_play_mana → `[block_damage once]`
-  - `secret_mine/arrow/wither/sculk/tnt` = on_opponent_* → 对应效果
-  - `cactus_thorns` = on_attacked → `[deal_damage attacker 1]`；装备机制 5 个 = 规则型 effect
+  - `secret_mine/arrow/wither/sculk/tnt` = on_opponent_* → 对应效果；新秘密 `secret_freeze` = on_opponent_attack → `[freeze attacker]`（P2 新规则 effect）、`secret_draw` = on_opponent_play_mana → `[draw 1]`
+  - `cactus_thorns` = on_attacked → `[deal_damage attacker 1]`；`magma_thorns` = on_attacked → `[deal_damage attacker 2]`
+  - 平衡版新增技能：`buff_all_atk_1` = on_play_mana → `[add_atk all_allies 1]`、`buff_atk_3` = `[add_atk selected_ally 3]`、`heal_all_2` = `[add_hp all_allies 2]`、`aoe_enemy_2` = `[deal_damage all_enemy_summons 2]`、`silverfish_growth` = on_turn_start → `[add_atk self 1, add_hp self 1]`、`pillager_shot` = on_summon → `[deal_damage enemy_player 1]`、`dragon_breath` = on_summon → `[deal_damage all_enemy_summons 2]`
+  - 装备机制 5 个 = 规则型 effect（guard/ranged/charge+免疫/windfury/taunt）
 - `DuelEngine` 触发点接 dispatcher：playCard / attack / applyCardDamage / startTurn / endTurn / drawCard / death / summon（约 10 处）
 - 卡数据 `skill` 字段语义不变（存 skill id），技能定义独立于卡牌 JSON
 - 校验：引用不存在的 skill id / effect id / 参数越界 → 加载时警告 + 对局中兜底白板
@@ -265,21 +320,32 @@
 
 - 新 SERVER 配置 `DuelConfig.maxTurnLimit`：**默认 50**，建议范围 10-200；注册方式同 `trapZoneLimit`（`CardduelMod` 构造器 `registerConfig(ModConfig.Type.SERVER, ...)`）
 - **配置注释必须写明警告**（玩家在配置界面可见）：过高的回合数上限会显著增大对局状态体积与存档体积（弃牌堆持续增长；配合印卡/治疗闭环可致无界膨胀），可能造成卡顿或坏档——除非确有需要，请勿设置过高（>100 不推荐）
-- **客户端提醒**：`ClientboundDuelSyncPayload.PlayerSyncView` 增 `turnLimit`/`maxTurn` 字段；`BattleBoardHud` 回合指示改为「第 X / 50 回合」，剩余 ≤5 回合时以警告色显示
-- **结算规则**：`turnCount` 达到上限 → 对局立即 FINISHED：剩余血量多者胜，相等判平局（判胜时机在回合结束检查，`DuelEngine` 回合循环内）
+- **客户端提醒**：`ClientboundDuelSyncPayload` 顶层增 `turnLimit` 字段（服务端读 `DuelConfig.MAX_TURN_LIMIT` 下发）；`BattleBoardHud` 回合指示改为「第 X / 50 回合」，剩余 ≤5 回合时以警告色显示
+- **结算规则**：`turnNumber` 达到上限 → 对局立即 FINISHED：剩余血量多者胜，相等判平局（判胜时机在回合结束检查，`DuelEngine` 回合循环内）
 - 与疲劳的关系：疲劳是常规终结手段，回合上限只是最终保险丝；正常对局（hpCap≤999）约 10-60 回合内结束，50 回合默认值不影响常规对局体验
 
 **二、双端同步优化（两阶段，阶段一必做）**
 
-- **阶段一（必做）——deck/discard 内容移出公开同步**：现有 `DuelPlayerData.savePublic` 将 deck（54 张）与 discard **内容**全量塞进公开同步通道（`DuelTableBlockEntity.getUpdateTag`），每次同步 ~8KB 且客户端只读数量。改为：**存档 NBT 保留全量内容**（deck/discard 内容继续落盘，重进不丢牌）；**公开同步视图仅携带数量**（`deckCount`/`discardCount`）。印卡后同理——弃牌堆内容永不进公开同步。
+- **阶段一（必做）——deck/discard 内容移出公开同步**：现有 `DuelPlayerData.savePublic` 将 deck（54 张）与 discard **内容**全量塞进公开同步通道（`DuelTableBlockEntity.getUpdateTag`），每次同步 ~8KB 且客户端只读数量。改为：**存档 NBT 保留全量内容**（deck/discard 内容继续落盘，重进不丢牌）；**对局中公开同步仅携带数量**（`DeckCount`/`DiscardCount`）。**例外**：SETUP/WAITING 阶段（对局前）仍随包发送 deck 内容——`DuelTableBlockEntityRenderer.renderDecks` 需要渲染双方牌组预览；对局中该渲染分支不执行，故只同步数量。印卡后同理——弃牌堆内容永不进对局中公开同步。
 - **阶段二（可选）——同步时机脏标记化**：目前每次状态变化都全量重发公开视图，可改为事件驱动（仅变化字段）或按 tick 节流合并，进一步压缩高频操作（攻击/出牌连点）的包量。
 - **不变项**：手牌/秘密内容维持现有定向私发（`ClientboundDuelHandPayload` / `ClientboundDuelTrapPayload` 只发本人），不因瘦身而改变；服务器存档（落盘 NBT）不受影响。
-- **预期收益**：单次公开同步 ~8KB → ~1KB；印卡场景下收益同比例放大（弃牌堆内容永不参与同步后，同步成本与弃牌堆规模完全解耦）。
+- **预期收益**：对局中单次公开同步 ~8KB → ~1KB；印卡场景下收益同比例放大（弃牌堆内容永不参与对局中同步后，同步成本与弃牌堆规模完全解耦）。
+
+**三、实现记录（代码已实现，未提交）**
+
+- `config/DuelConfig.java`：`MAX_TURN_LIMIT`（`defineInRange("maxTurnLimit", 50, 10, 200)`）+ 配置注释警告（膨胀/坏档风险，>100 不推荐）
+- `duel/DuelEngine.java`：`endTurn` 在切换行动方前检查 `turnNumber >= MAX_TURN_LIMIT` → 广播 `cardduel.duel.turn_limit` → `finishDuel(table, decideByHp(table))`；新增 `decideByHp`（血多者胜，相等 null）；`finishDuel` 平局分支广播 `cardduel.duel.draw_game`
+- `duel/DuelPlayerData.java`：`savePublic(tag, provider, includeDeckContents)`——true 写 Deck/Discard 全量（存档/对局前预览），false 写 `DeckCount`/`DiscardCount`；`save()` 传 true 保持存档全量
+- `block/entity/DuelTableBlockEntity.java`：`savePublic` 增参透传；`saveAdditional` 传 true；`getUpdateTag` 按 `phase == SETUP || WAITING` 决定是否携带 deck 内容
+- `network/payload/ClientboundDuelSyncPayload.java`：record 增 `int turnLimit`（encode/decode varInt、`of()` 读 `DuelConfig.MAX_TURN_LIMIT.get()`）
+- `client/hud/BattleBoardHud.java`：回合指示改 `cardduel.hud.turn_total`（第 %s/%s 回合），剩余 ≤5 回合用警告色 0xFFFF7043
+- lang zh/en 新增：`cardduel.duel.turn_limit`、`cardduel.duel.draw_game`（注意 `cardduel.duel.draw` 已占用为抽牌消息）、`cardduel.hud.turn_total`
+- 编译通过（4 条既有 deprecation 警告不变）
 
 ---
 
 ## 10. 待用户敲定的事项
 
-1. 卡池规模是否合适（37 张 / 2 副牌）；如需更多/更少，指出方向即可
-2. 个别卡的主题与数值是否要调整（如监守者 8 费、不死图腾 6 费是否合理）
+1. **平衡版 v2 数值**（53 张，标准对局 10 法力/30 血/50 回合）：整体数值与流派设计待双客户端实测验证后微调
+2. 个别卡的主题与数值是否要调整（如监守者 8 费、末影龙 9 费、不死图腾 6 费是否合理）
 3. 秘密触发的优先级（多秘密同时满足时按放置顺序依次触发，当前实现）——如要改动 P2 再议

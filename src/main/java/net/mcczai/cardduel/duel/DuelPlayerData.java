@@ -186,7 +186,7 @@ public class DuelPlayerData {
     // ==================== NBT ====================
 
     public void save(CompoundTag tag, HolderLookup.Provider provider) {
-        savePublic(tag, provider);
+        savePublic(tag, provider, true);
         tag.put("Hand", saveStackList(this.hand, provider));
         // 秘密区内容为隐藏信息：只落盘，不进公开同步包
         tag.put("Trap", saveStackList(this.trapZone, provider));
@@ -194,12 +194,21 @@ public class DuelPlayerData {
     }
 
     /**
-     * 只写公开数据（不含手牌/陷阱内容），用于方块实体同步包。
+     * 只写公开数据（不含手牌/陷阱内容），用于方块实体同步包与存档。
      * 装备为公开信息（对手可见挂载的装备），随 Board 一并公开。
+     *
+     * @param includeDeckContents true=写 deck/discard 完整内容（存档、对局前牌组预览同步）；
+     *                            false=仅写 DeckCount/DiscardCount 数量（对局中公开同步瘦身，
+     *                            弃牌堆/牌库内容永不进对局中公开同步包）
      */
-    public void savePublic(CompoundTag tag, HolderLookup.Provider provider) {
-        tag.put("Deck", saveStackList(this.deck, provider));
-        tag.put("Discard", saveStackList(this.discard, provider));
+    public void savePublic(CompoundTag tag, HolderLookup.Provider provider, boolean includeDeckContents) {
+        if (includeDeckContents) {
+            tag.put("Deck", saveStackList(this.deck, provider));
+            tag.put("Discard", saveStackList(this.discard, provider));
+        } else {
+            tag.putInt("DeckCount", this.deck.size());
+            tag.putInt("DiscardCount", this.discard.size());
+        }
 
         ListTag boardTag = new ListTag();
         for (ItemStack stack : this.board) {

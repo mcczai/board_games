@@ -38,6 +38,8 @@
   "cardduel.duel.hand_full_burn": "%s's hand is full; the drawn card was burned",
   "cardduel.duel.fatigue": "%s's deck is empty; takes %s fatigue damage (hit #%s)",
   "cardduel.duel.finish": "Duel over! %s wins",
+  "cardduel.duel.draw_game": "Duel over! HP tied — it's a draw",
+  "cardduel.duel.turn_limit": "Turn limit reached (%s/%s rounds) — winner decided by remaining HP",
   "cardduel.duel.disconnect": "%s disconnected",
   "cardduel.duel.cmd.not_seated": "You are not seated at a duel table",
   "cardduel.duel.cmd.not_your_turn": "It is not your turn",
@@ -71,6 +73,7 @@
   "cardduel.duel.skip_draw": "%s is affected by the Sculk Shrieker and skips drawing this turn",
 
   "cardduel.hud.turn": "Round %s",
+  "cardduel.hud.turn_total": "Round %s / %s",
   "cardduel.hud.end_turn": "End Turn",
   "cardduel.hud.mulligan_confirm": "Confirm Mulligan",
   "cardduel.hud.mulligan_hint": "Mulligan: %s/2 selected (click cards to choose)",

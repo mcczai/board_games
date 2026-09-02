@@ -3,6 +3,7 @@ package net.mcczai.cardduel.network.payload;
 import net.mcczai.cardduel.CardduelMod;
 import net.mcczai.cardduel.block.DuelTableBlock;
 import net.mcczai.cardduel.block.entity.DuelTableBlockEntity;
+import net.mcczai.cardduel.config.DuelConfig;
 import net.mcczai.cardduel.duel.DuelPlayerData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -25,6 +26,7 @@ public record ClientboundDuelSyncPayload(
         int manaCap,
         int hpCap,
         int turnNumber,
+        int turnLimit,
         BlockPos tablePos,
         String facing,
         String hostName,
@@ -46,6 +48,7 @@ public record ClientboundDuelSyncPayload(
                     int manaCap = buf.readVarInt();
                     int hpCap = buf.readVarInt();
                     int turnNumber = buf.readVarInt();
+                    int turnLimit = buf.readVarInt();
                     BlockPos tablePos = BlockPos.STREAM_CODEC.decode(buf);
                     String facing = ByteBufCodecs.STRING_UTF8.decode(buf);
                     String hostName = ByteBufCodecs.STRING_UTF8.decode(buf);
@@ -55,7 +58,7 @@ public record ClientboundDuelSyncPayload(
                     UUID guest = readNullableUuid(buf);
                     PlayerSyncView hostView = PlayerSyncView.STREAM_CODEC.decode(buf);
                     PlayerSyncView guestView = PlayerSyncView.STREAM_CODEC.decode(buf);
-                    return new ClientboundDuelSyncPayload(phase, manaCap, hpCap, turnNumber,
+                    return new ClientboundDuelSyncPayload(phase, manaCap, hpCap, turnNumber, turnLimit,
                             tablePos, facing, hostName, guestName,
                             active, host, guest, hostView, guestView);
                 }
@@ -66,6 +69,7 @@ public record ClientboundDuelSyncPayload(
                     buf.writeVarInt(payload.manaCap);
                     buf.writeVarInt(payload.hpCap);
                     buf.writeVarInt(payload.turnNumber);
+                    buf.writeVarInt(payload.turnLimit);
                     BlockPos.STREAM_CODEC.encode(buf, payload.tablePos);
                     ByteBufCodecs.STRING_UTF8.encode(buf, payload.facing);
                     ByteBufCodecs.STRING_UTF8.encode(buf, payload.hostName);
@@ -99,6 +103,7 @@ public record ClientboundDuelSyncPayload(
                 table.getManaCap(),
                 table.getHpCap(),
                 table.getTurnNumber(),
+                DuelConfig.MAX_TURN_LIMIT.get(),
                 table.getBlockPos(),
                 table.getBlockState().getValue(DuelTableBlock.FACING).getName(),
                 playerName(table, table.getHostUuid()),
