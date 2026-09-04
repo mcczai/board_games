@@ -19,7 +19,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 /**
  * 客户端网络包注册与处理。
  */
-@EventBusSubscriber(modid = CardduelMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = CardduelMod.MODID, value = Dist.CLIENT)
 public class ClientPayloadHandlers {
 
     @SubscribeEvent

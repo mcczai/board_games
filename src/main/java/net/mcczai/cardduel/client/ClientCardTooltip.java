@@ -28,9 +28,9 @@ public class ClientCardTooltip implements ClientTooltipComponent {
     private int height;
 
     public ClientCardTooltip(CardTooltip tooltip){
-        this.card = tooltip.getCard();
-        this.iCard = tooltip.getiCard();
-        this.cardIndex = tooltip.getCardIndex();
+        this.card = tooltip.card();
+        this.iCard = tooltip.iCard();
+        this.cardIndex = tooltip.cardIndex();
         this.maxWidth = 0;
         this.height = 0;
         this.getText();

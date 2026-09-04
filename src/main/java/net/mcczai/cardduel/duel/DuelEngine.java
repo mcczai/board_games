@@ -302,7 +302,7 @@ public final class DuelEngine {
      */
     public static void drawCard(DuelTableBlockEntity table, DuelPlayerData data, String playerName) {
         if (!data.getDeck().isEmpty()) {
-            ItemStack card = data.getDeck().remove(0);
+            ItemStack card = data.getDeck().removeFirst();
             if (data.getHand().size() < DuelPlayerData.MAX_HAND) {
                 data.getHand().add(card);
                 broadcast(table, Component.translatable("cardduel.duel.draw", playerName, data.getDeck().size()));

@@ -260,15 +260,11 @@ public class DuelPlayerData {
 
         Arrays.fill(this.summonTurn, 0);
         int[] turns = tag.getIntArray("SummonTurn");
-        for (int i = 0; i < Math.min(turns.length, BOARD_SIZE); i++) {
-            this.summonTurn[i] = turns[i];
-        }
+        System.arraycopy(turns, 0, this.summonTurn, 0, Math.min(turns.length, BOARD_SIZE));
 
         Arrays.fill(this.attackTurn, 0);
         int[] attacks = tag.getIntArray("AttackTurn");
-        for (int i = 0; i < Math.min(attacks.length, BOARD_SIZE); i++) {
-            this.attackTurn[i] = attacks[i];
-        }
+        System.arraycopy(attacks, 0, this.attackTurn, 0, Math.min(attacks.length, BOARD_SIZE));
 
         this.hp = tag.getInt("Hp");
         this.mp = tag.getInt("Mp");

@@ -30,23 +30,17 @@ public class CardduelCreativeTab {
             .title(Component.translatable("itemGroup.cardduel.mana"))
             .withTabsBefore(TARP_TAB.getId())
             .icon(() -> ModItem.CARD_ITEM.get().getDefaultInstance())
-            .displayItems((parameters, output) -> {
-                output.acceptAll(AbstractCardItem.fillItemTab(CardTabType.MANA));
-            }).build());
+            .displayItems((parameters, output) -> output.acceptAll(AbstractCardItem.fillItemTab(CardTabType.MANA))).build());
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> EQUIP_TAB = CARDDUEL_TABS.register("equip_tab", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.cardduel.equip"))
             .withTabsBefore(MANA_TAB.getId())
             .icon(() -> ModItem.CARD_ITEM.get().getDefaultInstance())
-            .displayItems((parameters, output) -> {
-                output.acceptAll(AbstractCardItem.fillItemTab(CardTabType.EQUIP));
-            }).build());
+            .displayItems((parameters, output) -> output.acceptAll(AbstractCardItem.fillItemTab(CardTabType.EQUIP))).build());
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> SUMMON_TAB = CARDDUEL_TABS.register("summon_tab", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.cardduel.summon"))
             .withTabsBefore(EQUIP_TAB.getId())
             .icon(() -> ModItem.CARD_ITEM.get().getDefaultInstance())
-            .displayItems((parameters, output) -> {
-                output.acceptAll(AbstractCardItem.fillItemTab(CardTabType.SUMMON));
-            }).build());
+            .displayItems((parameters, output) -> output.acceptAll(AbstractCardItem.fillItemTab(CardTabType.SUMMON))).build());
 }
